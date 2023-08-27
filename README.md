@@ -12,11 +12,11 @@ A dockerised starter stack containing the following components:
 
 1. Clone repo:
 
-    ```git clone git@github.com:pavdwest/fastapi_pg_sqlalchemy_starter.git```
+    ```git clone git@github.com:pavdwest/fastapi_pg_sqlalchemy_async_starter.git```
 
 2. Enter directory:
 
-    ```cd fastapi_pg_sqlalchemy_starter```
+    ```cd fastapi_pg_sqlalchemy_async_starter```
 
 3. Create & activate virtual environment:
 
