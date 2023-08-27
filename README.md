@@ -7,6 +7,7 @@ A dockerised starter stack containing the following components:
 * SQLAlchemy ORM (Async)
 * Alembic Migrations
 * Pydantic Validations
+* TODO: Proper Pytest with DB
 
 # Getting Started
 
