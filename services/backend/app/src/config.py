@@ -8,12 +8,6 @@ PROJECT_NAME = os.environ.get('PROJECT_NAME')
 # Project folders
 APP_SRC_FOLDER_ABS = os.path.dirname(os.path.realpath(__file__))
 
-# Redis
-REDIS_HOST     = os.environ.get('REDIS')
-REDIS_PORT     = os.environ.get('REDIS_PORT')
-REDIS_USERNAME = os.environ.get('REDIS_USERNAME')
-REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD')
-
 # Database
 DATABASE_HOST: str      = os.environ.get('DATABASE_HOST')
 DATABASE_PORT: int      = os.environ.get('DATABASE_PORT')
