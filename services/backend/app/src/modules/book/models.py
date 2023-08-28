@@ -1,9 +1,8 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-from src.models import AppModel
+from src.models import AppModel, IdentifierMixin, NameMixin
 
 
-class Book(AppModel):
-    name = Column(String, nullable=False)
-    author = Column(String, nullable=False)
-    release_year = Column(Integer, nullable=False)
+class Book(AppModel, IdentifierMixin, NameMixin):
+    author: Mapped[str] = mapped_column()
+    release_year: Mapped[int] = mapped_column(nullable=True)

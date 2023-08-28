@@ -1,39 +1,55 @@
 from typing import List
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, HTTPException
+from inflection import pluralize
+from sqlalchemy.exc import IntegrityError
+from asyncpg.exceptions import UniqueViolationError, ForeignKeyViolationError
 
 from src.modules.book.models import Book
 from src.modules.book.validators import BookCreate, BookGet
 
 
-model_class = Book
-
+ModelClass = Book
+CreateClass = BookCreate
+GetClass = BookGet
 
 router = APIRouter(
-    tags=[model_class.__tablename_friendly__],
-    prefix=f"/{model_class.__tablename__}",
+    tags=[ModelClass.__tablename_friendly__],
+    prefix=f"/{ModelClass.__tablename__}",
 )
 
 
 @router.post(
-    f"/create_one",
-    response_model=BookGet,
+    '',
+    response_model=GetClass,
     status_code=status.HTTP_200_OK,
-    summary=f"Create one {model_class.__name__} in the database.",
+    summary=f"Create one {ModelClass.__name__} in the database.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def create_one(item: BookCreate) -> BookGet:
+async def create_one(item: CreateClass) -> GetClass:
     res = await Book(**dict(item)).create()
-    return BookGet.model_validate(res)
+    return GetClass.model_validate(res)
 
 
 @router.get(
-    f"/get_all",
-    response_model=List[BookGet],
+    "/{id}",
+    response_model=List[GetClass],
     status_code=status.HTTP_200_OK,
-    summary=f"Get all instances of {model_class.__name__} stored in the database.",
+    summary=f"Get a {ModelClass.__name__} stored in the database by its ID.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def get_all() -> List[BookGet]:
+async def get_by_id(id: int) -> List[GetClass]:
+    item = await Book.get(id=id)
+    return GetClass.model_validate(item)
+
+
+@router.get(
+    '',
+    response_model=List[GetClass],
+    status_code=status.HTTP_200_OK,
+    summary=f"Get all {pluralize(ModelClass.__name__)} stored in the database.",
+    description='Endpoint description. Will use the docstring if not provided.',
+)
+async def get_all() -> List[GetClass]:
     items = await Book.fetch_all()
-    return [BookGet.model_validate(item) for item in items]
+    return [GetClass.model_validate(item) for item in items]

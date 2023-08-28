@@ -2,28 +2,41 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import List
 from datetime import datetime
-from sqlalchemy.orm import DeclarativeBase
+
+from sqlalchemy import BigInteger
 from sqlalchemy.future import select
-from inflection import titleize, pluralize, underscore
-from sqlalchemy_utils import get_class_by_table
-from sqlalchemy import Column, Integer, DateTime, String
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+)
+from sqlalchemy_utils import get_class_by_table
+from inflection import titleize, pluralize, underscore
 
 from src.logging.service import logger
 from src.database.service import db
 
 
 class IdMixin:
-    id =  Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
 
 class TimestampsMixin:
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class IdentifierMixin:
-    identifier =  Column(String, primary_key=True)
+    identifier: Mapped[str] = mapped_column(unique=True)
+
+
+class NameMixin:
+    name: Mapped[str] = mapped_column()
+
+
+class DescriptionMixin:
+    identifier: Mapped[str] = mapped_column()
 
 
 class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
