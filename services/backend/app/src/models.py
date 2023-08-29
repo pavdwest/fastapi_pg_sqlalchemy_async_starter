@@ -74,3 +74,10 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             q = select(cls.get_model_class())
             res = await session.execute(q)
             return [r for r in res.scalars()]
+
+    @classmethod
+    async def get_by_id(cls, id: int) -> AppModel:
+        async with db.async_session() as session:
+            q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
+            res = await session.execute(q)
+            return res.scalars().first()

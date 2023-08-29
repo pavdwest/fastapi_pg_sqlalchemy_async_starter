@@ -8,7 +8,6 @@ class BookCreate(BaseModel):
     release_year: int
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
         json_schema_extra = {
@@ -29,7 +28,6 @@ class BookGet(BaseModel):
     release_year: int
 
     class Config:
-        orm_mode = True
         from_attributes = True
 
         json_schema_extra = {
