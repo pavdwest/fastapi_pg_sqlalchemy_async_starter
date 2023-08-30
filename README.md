@@ -65,7 +65,7 @@ See changes to ```services/backend/app/src/migrations/env.py```
 
 ## PGAdmin4
 
-You can access PGAdmin4 at ```http://localhost:5050```.
+You can access PGAdmin4 at ```http://127.0.0.1:5050```.
 
 See the `pgadmin` service in the ```docker-componse.yml``` file for credentials.
 

@@ -8,8 +8,8 @@ services:
     environment:
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
       - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
-      - POSTGRES_USER=postgres_user
-      - POSTGRES_PASSWORD=postgres_password
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
       # App will create its own DB!
       - POSTGRES_DB=postgres
       - POSTGRES_PORT=5432
@@ -44,8 +44,8 @@ services:
       - PROJECT_NAME=Project
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
-      - DATABASE_USERNAME=postgres_user
-      - DATABASE_PASSWORD=postgres_password
+      - DATABASE_USERNAME=admin
+      - DATABASE_PASSWORD=admin
       - DATABASE_NAME=project_database
     command: uvicorn src.main:app --host=0.0.0.0 --port=8000 --reload --log-level 'debug'
     volumes:
