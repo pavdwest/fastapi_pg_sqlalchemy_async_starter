@@ -1,4 +1,5 @@
 .venv
 __pycache__
 logs
-.ignore
+app/.ignore/*
+!app/.ignore/.dirkeep
