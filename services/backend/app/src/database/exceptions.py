@@ -3,7 +3,7 @@ from asyncpg.exceptions._base import UnknownPostgresError
 from asyncpg.exceptions import (
     PostgresError,
     UniqueViolationError,
-    ForeignKeyViolationError
+    ForeignKeyViolationError,
 )
 from fastapi import HTTPException, status
 
@@ -20,8 +20,14 @@ def raise_known(e: IntegrityError) -> None:
 
     # Switch to raise specific exception class
     if klass == UniqueViolationError:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e.orig.__context__))
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e.orig.__context__)
+        )
     elif klass == ForeignKeyViolationError:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e.orig.__context__))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e.orig.__context__),
+        )
     else:
         raise e

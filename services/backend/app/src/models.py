@@ -24,7 +24,10 @@ class IdMixin:
 
 class TimestampsMixin:
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
 
 
 class IdentifierMixin:
@@ -58,7 +61,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
     @classmethod
     async def init_orm(cls):
         async with db.async_engine.begin() as conn:
-            logger.warning('Creating tables...')
+            logger.warning("Creating tables...")
             # await conn.run_sync(cls.metadata.drop_all)
             # await conn.run_sync(cls.metadata.create_all)
 
