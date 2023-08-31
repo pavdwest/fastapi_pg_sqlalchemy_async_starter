@@ -65,3 +65,16 @@ async def get_by_id(id: int) -> GetClass:
 async def get_all() -> List[GetClass]:
     items = await Book.fetch_all()
     return [GetClass.model_validate(item) for item in items]
+
+
+@router.delete(
+    '',
+    response_model=List[GetClass],
+    status_code=status.HTTP_200_OK,
+    summary=f"Delete all {pluralize(ModelClass.__name__)} stored in the database.",
+    description='Endpoint description. Will use the docstring if not provided.',
+)
+async def delete_all() -> List[GetClass]:
+    items = await Book.fetch_all()
+    await Book.delete_all()
+    return [GetClass.model_validate(item) for item in items]

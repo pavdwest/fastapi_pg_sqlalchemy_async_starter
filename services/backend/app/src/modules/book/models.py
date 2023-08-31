@@ -7,4 +7,4 @@ from src.models import AppModel, IdentifierMixin, NameMixin
 
 class Book(AppModel, IdentifierMixin, NameMixin):
     author: Mapped[str] = mapped_column()
-    release_year: Mapped[int] = mapped_column(nullable=True)
+    release_year: Mapped[Optional[int]] = mapped_column(nullable=True)

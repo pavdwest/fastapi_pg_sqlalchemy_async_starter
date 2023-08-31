@@ -4,7 +4,7 @@ from typing import List
 from datetime import datetime
 
 from sqlalchemy import BigInteger
-from sqlalchemy.future import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -84,3 +84,10 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
             return res.scalars().first()
+
+    @classmethod
+    async def delete_all(cls):
+        async with db.async_session() as session:
+            q = delete(cls.get_model_class())
+            res = await session.execute(q)
+            await session.commit()
