@@ -1,10 +1,12 @@
 from typing import Optional
 from datetime import datetime, timedelta
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from src.validators import AppValidator, DeleteAll
 
 
-class BookBase(BaseModel):
+class BookBase(AppValidator):
     identifier:   str           = Field(description='ISBN', examples=['978-0-618-68000-9', '978-3-16-148410-0'])
     name:         str           = Field(examples=['A Brief Horror Story of Time', 'The Book of Nod'])
     author:       str           = Field(examples=['Oliver Twist', 'Bill Shakes Pierre'])
@@ -44,3 +46,7 @@ class BookGet(BookBase):
             }
         }
     )
+
+
+class BookDelete(DeleteAll):
+    pass

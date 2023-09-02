@@ -5,6 +5,7 @@ from datetime import datetime
 
 from sqlalchemy import BigInteger
 from sqlalchemy import select, delete
+from sqlalchemy import func
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -21,6 +22,13 @@ from src.database.service import db
 class IdMixin:
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
+    @classmethod
+    async def get_by_id(cls, id: int) -> AppModel:
+        async with db.async_session() as session:
+            q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
+            res = await session.execute(q)
+            return res.scalars().first()
+
 
 class TimestampsMixin:
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
@@ -32,6 +40,13 @@ class TimestampsMixin:
 
 class IdentifierMixin:
     identifier: Mapped[str] = mapped_column(unique=True)
+
+    @classmethod
+    async def get_by_identifier(cls, identifier: str) -> AppModel:
+        async with db.async_session() as session:
+            q = select(cls.get_model_class()).where(cls.get_model_class().identifier == identifier)
+            res = await session.execute(q)
+            return res.scalars().first()
 
 
 class NameMixin:
@@ -65,11 +80,12 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             # await conn.run_sync(cls.metadata.drop_all)
             # await conn.run_sync(cls.metadata.create_all)
 
-    async def create(self):
+    @classmethod
+    async def get_count(cls) -> int:
         async with db.async_session() as session:
-            async with session.begin():
-                session.add(self)
-                return self
+            q = select(func.count(cls.get_model_class().id))
+            res = await session.execute(q)
+            return res.scalar()
 
     @classmethod
     async def fetch_all(cls) -> List[AppModel]:
@@ -79,15 +95,15 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             return [r for r in res.scalars()]
 
     @classmethod
-    async def get_by_id(cls, id: int) -> AppModel:
-        async with db.async_session() as session:
-            q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
-            res = await session.execute(q)
-            return res.scalars().first()
-
-    @classmethod
     async def delete_all(cls):
         async with db.async_session() as session:
             q = delete(cls.get_model_class())
             res = await session.execute(q)
             await session.commit()
+            return res.rowcount
+
+    async def save(self):
+        async with db.async_session() as session:
+            async with session.begin():
+                session.add(self)
+                return self

@@ -3,16 +3,16 @@ from typing import List
 from fastapi import APIRouter, status, HTTPException
 from inflection import pluralize
 from sqlalchemy.exc import IntegrityError
-from asyncpg.exceptions import UniqueViolationError, ForeignKeyViolationError
 
 from src.database.exceptions import raise_known
 from src.modules.book.models import Book
-from src.modules.book.validators import BookCreate, BookGet
+from src.modules.book.validators import BookCreate, BookGet, BookDelete
 
 
 ModelClass = Book
 CreateClass = BookCreate
 GetClass = BookGet
+DeleteClass = BookDelete
 
 router = APIRouter(
     tags=[ModelClass.__tablename_friendly__],
@@ -29,7 +29,7 @@ router = APIRouter(
 )
 async def create_one(item: CreateClass) -> GetClass:
     try:
-        res = await Book(**dict(item)).create()
+        res = await ModelClass(**item.__dict__).save()
         return GetClass.model_validate(res)
     except IntegrityError as e:
         raise_known(e)
@@ -43,7 +43,7 @@ async def create_one(item: CreateClass) -> GetClass:
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def get_by_id(id: int) -> GetClass:
-    item = await Book.get_by_id(id=id)
+    item = await ModelClass.get_by_id(id=id)
 
     if item is None:
         raise HTTPException(
@@ -54,7 +54,6 @@ async def get_by_id(id: int) -> GetClass:
     return GetClass.model_validate(item.__dict__)
 
 
-
 @router.get(
     '',
     response_model=List[GetClass],
@@ -63,18 +62,19 @@ async def get_by_id(id: int) -> GetClass:
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def get_all() -> List[GetClass]:
-    items = await Book.fetch_all()
-    return [GetClass.model_validate(item) for item in items]
+    return [GetClass.model_validate(item) for item in await Book.fetch_all()]
 
 
 @router.delete(
     '',
-    response_model=List[GetClass],
+    response_model=DeleteClass,
     status_code=status.HTTP_200_OK,
     summary=f"Delete all {pluralize(ModelClass.__name__)} stored in the database.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def delete_all() -> List[GetClass]:
-    items = await Book.fetch_all()
-    await Book.delete_all()
-    return [GetClass.model_validate(item) for item in items]
+async def delete_all() -> DeleteClass:
+    res =  await ModelClass.delete_all()
+    return DeleteClass(
+        message=f'Deleted all {pluralize(ModelClass.__name__)} in the database.',
+        count=res,
+    )
