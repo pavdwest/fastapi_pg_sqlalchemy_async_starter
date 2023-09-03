@@ -9,10 +9,10 @@ PROJECT_NAME = os.environ.get('PROJECT_NAME')
 APP_SRC_FOLDER_ABS = os.path.dirname(os.path.realpath(__file__))
 
 # Database
-DATABASE_HOST: str      = os.environ.get('DATABASE_HOST')
-DATABASE_PORT: int      = os.environ.get('DATABASE_PORT')
-DATABASE_USERNAME: str  = os.environ.get('DATABASE_USERNAME')
-DATABASE_PASSWORD: str  = os.environ.get('DATABASE_PASSWORD')
-DATABASE_NAME: str      = os.environ.get('DATABASE_NAME')
-DATABASE_URL_SYNC: str  = f"postgresql+psycopg2://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
-DATABASE_URL_ASYNC: str = f"postgresql+asyncpg://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
+DATABASE_HOST: str            = os.environ.get('DATABASE_HOST')
+DATABASE_PORT: int            = os.environ.get('DATABASE_PORT')
+DATABASE_USERNAME: str        = os.environ.get('DATABASE_USERNAME')
+DATABASE_PASSWORD: str        = os.environ.get('DATABASE_PASSWORD')
+DATABASE_NAME: str            = os.environ.get('DATABASE_NAME')
+DATABASE_URL_SYNC: str        = f"postgresql+psycopg2://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
+DATABASE_URL_ASYNC: str       = f"postgresql+asyncpg://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"

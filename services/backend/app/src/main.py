@@ -1,6 +1,5 @@
 from src.app import app
 
-from src.database.service import db
 from src.route_manager import register_app
 from src.models import AppModel
 
@@ -12,7 +11,8 @@ async def startup():
 
 @app.on_event('shutdown')
 async def startup():
-    await db.shutdown()
+    # await db.shutdown()
+    pass
 
 
 # Register routes with app

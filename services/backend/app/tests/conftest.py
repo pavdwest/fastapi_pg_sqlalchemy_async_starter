@@ -4,8 +4,6 @@ import pytest
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient
 
-from src.main import app
-
 
 # Config env vars
 DATABASE_NAME: str  = os.environ.get('DATABASE_NAME')
@@ -19,6 +17,13 @@ def anyio_backend():
 
 @pytest.fixture(scope='session')
 async def client():
+    # Lazy import to ensure env vars are set
+    from src.main import app
+    from src.database.service import DatabaseService
+
+    # Drop the db before each run - will be recreated if it doesn't exist
+    DatabaseService.drop_db()
+
     async with LifespanManager(app):
         async with AsyncClient(app=app, base_url='http://test') as c:
             yield c

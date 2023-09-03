@@ -16,7 +16,7 @@ from sqlalchemy_utils import get_class_by_table
 from inflection import titleize, pluralize, underscore
 
 from src.logging.service import logger
-from src.database.service import db
+from src.database.service import DatabaseService
 
 
 class IdMixin:
@@ -24,7 +24,7 @@ class IdMixin:
 
     @classmethod
     async def get_by_id(cls, id: int) -> AppModel:
-        async with db.async_session() as session:
+        async with DatabaseService.get().async_session() as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
             return res.scalars().first()
@@ -43,7 +43,7 @@ class IdentifierMixin:
 
     @classmethod
     async def get_by_identifier(cls, identifier: str) -> AppModel:
-        async with db.async_session() as session:
+        async with DatabaseService.get().async_session() as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().identifier == identifier)
             res = await session.execute(q)
             return res.scalars().first()
@@ -75,35 +75,35 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
 
     @classmethod
     async def init_orm(cls):
-        async with db.async_engine.begin() as conn:
+        async with DatabaseService.get().async_engine.begin() as conn:
             logger.warning("Creating tables...")
             # await conn.run_sync(cls.metadata.drop_all)
             # await conn.run_sync(cls.metadata.create_all)
 
     @classmethod
     async def get_count(cls) -> int:
-        async with db.async_session() as session:
+        async with DatabaseService.get().async_session() as session:
             q = select(func.count(cls.get_model_class().id))
             res = await session.execute(q)
             return res.scalar()
 
     @classmethod
     async def fetch_all(cls) -> List[AppModel]:
-        async with db.async_session() as session:
+        async with DatabaseService.get().async_session() as session:
             q = select(cls.get_model_class())
             res = await session.execute(q)
             return [r for r in res.scalars()]
 
     @classmethod
     async def delete_all(cls):
-        async with db.async_session() as session:
+        async with DatabaseService.get().async_session() as session:
             q = delete(cls.get_model_class())
             res = await session.execute(q)
             await session.commit()
             return res.rowcount
 
     async def save(self):
-        async with db.async_session() as session:
+        async with DatabaseService.get().async_session() as session:
             async with session.begin():
                 session.add(self)
                 return self
