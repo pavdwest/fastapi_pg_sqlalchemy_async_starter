@@ -1,12 +1,18 @@
 from __future__ import annotations
 import os
+from functools import lru_cache
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
 
 from src.logging.service import logger
-from src.config import DATABASE_HOST, DATABASE_NAME, DATABASE_URL_SYNC, DATABASE_URL_ASYNC
+from src.config import (
+    DATABASE_HOST,
+    DATABASE_NAME,
+    DATABASE_URL_SYNC,
+    DATABASE_URL_ASYNC,
+)
 
 
 # TODO: Proper singleton
@@ -14,6 +20,7 @@ class DatabaseService:
     _instance = None
 
     @classmethod
+    @lru_cache(maxsize=1)
     def get(cls) -> DatabaseService:
         if cls._instance is None:
             cls._instance = DatabaseService()
@@ -45,13 +52,13 @@ class DatabaseService:
             if not database_exists(url=DATABASE_URL_SYNC):
                 raise Exception(f"COULD NOT CREATE DATABASE!")
             else:
-                logger.warning("Database created.")
+                logger.warning('Database created.')
         else:
             logger.info(f"Database '{DATABASE_HOST}/{DATABASE_NAME}' already exists. Nothing to do.")
 
     @classmethod
     def run_migrations(cls):
-        os.system("alembic upgrade head")
+        os.system('alembic upgrade head')
 
     @classmethod
     def drop_db(cls):

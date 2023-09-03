@@ -76,9 +76,10 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
     @classmethod
     async def init_orm(cls):
         async with DatabaseService.get().async_engine.begin() as conn:
-            logger.warning("Creating tables...")
+            # logger.warning("Creating tables...")
             # await conn.run_sync(cls.metadata.drop_all)
             # await conn.run_sync(cls.metadata.create_all)
+            pass
 
     @classmethod
     async def get_count(cls) -> int:
