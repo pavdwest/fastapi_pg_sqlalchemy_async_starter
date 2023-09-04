@@ -4,7 +4,7 @@ from typing import List
 from datetime import datetime
 
 from sqlalchemy import BigInteger
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from sqlalchemy import func
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import (
@@ -17,6 +17,7 @@ from inflection import titleize, pluralize, underscore
 
 from src.logging.service import logger
 from src.database.service import DatabaseService
+from src.validators import AppValidator
 
 
 class IdMixin:
@@ -96,12 +97,30 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             return [r for r in res.scalars()]
 
     @classmethod
+    async def delete_by_id(cls, id: int):
+        async with DatabaseService.get().async_session() as session:
+            q = delete(cls.get_model_class()).where(cls.get_model_class().id == id)
+            res = await session.execute(q)
+            await session.commit()
+            return res.rowcount
+
+    @classmethod
     async def delete_all(cls):
         async with DatabaseService.get().async_session() as session:
             q = delete(cls.get_model_class())
             res = await session.execute(q)
             await session.commit()
             return res.rowcount
+
+    @classmethod
+    async def update_by_id(cls, id: int, data: AppValidator, apply_none_values: bool = False) -> AppModel:
+        async with DatabaseService.get().async_session() as session:
+            async with session.begin():
+                q = update(cls.get_model_class())
+                data_noneified = {k: v for k, v in data.__dict__.items() if v is not None or apply_none_values}
+                res = await session.execute(q, [{'id': id, **data_noneified}])
+                await session.commit()
+                return await cls.get_by_id(id=id)
 
     async def save(self):
         async with DatabaseService.get().async_session() as session:

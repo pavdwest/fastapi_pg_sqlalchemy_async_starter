@@ -3,6 +3,7 @@ from typing import List
 from fastapi import APIRouter, status, HTTPException
 from inflection import pluralize
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import StaleDataError
 
 from src.database.exceptions import raise_known
 from src.modules.book.models import Book
@@ -35,8 +36,51 @@ async def create_one(item: CreateClass) -> GetClass:
         raise_known(e)
 
 
+@router.patch(
+    '/{id}',
+    response_model=GetClass,
+    status_code=status.HTTP_200_OK,
+    summary=f"Update a specific {ModelClass.__name__} stored in the database.",
+    description='Endpoint description. Will use the docstring if not provided.',
+)
+async def update_one(id: int, item: CreateClass) -> GetClass:
+    db_item = await ModelClass.get_by_id(id=id)
+
+    if db_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Object with id={id} not found."
+        )
+
+    res = await ModelClass.update_by_id(id=id, data=item)
+    return GetClass.model_validate(res)
+
+
+@router.delete(
+    '/{id}',
+    response_model=DeleteClass,
+    status_code=status.HTTP_200_OK,
+    summary=f"Delete a specific {ModelClass.__name__} stored in the database.",
+    description='Endpoint description. Will use the docstring if not provided.',
+)
+async def delete_one(id: int) -> DeleteClass:
+    db_item = await ModelClass.get_by_id(id=id)
+
+    if db_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Object with id={id} not found."
+        )
+
+    res = await ModelClass.delete_by_id(id=id)
+    return DeleteClass(
+        message=f'Deleted one {ModelClass.__name__} from the database.',
+        count=res,
+    )
+
+
 @router.get(
-    "/{id}",
+    '/{id}',
     response_model=GetClass,
     status_code=status.HTTP_200_OK,
     summary=f"Get a {ModelClass.__name__} stored in the database by its ID.",
@@ -54,17 +98,6 @@ async def get_by_id(id: int) -> GetClass:
     return GetClass.model_validate(item.__dict__)
 
 
-@router.get(
-    '',
-    response_model=List[GetClass],
-    status_code=status.HTTP_200_OK,
-    summary=f"Get all {pluralize(ModelClass.__name__)} stored in the database.",
-    description='Endpoint description. Will use the docstring if not provided.',
-)
-async def get_all() -> List[GetClass]:
-    return [GetClass.model_validate(item) for item in await Book.fetch_all()]
-
-
 @router.delete(
     '',
     response_model=DeleteClass,
@@ -78,3 +111,14 @@ async def delete_all() -> DeleteClass:
         message=f'Deleted all {pluralize(ModelClass.__name__)} in the database.',
         count=res,
     )
+
+
+@router.get(
+    '',
+    response_model=List[GetClass],
+    status_code=status.HTTP_200_OK,
+    summary=f"Get all {pluralize(ModelClass.__name__)} stored in the database.",
+    description='Endpoint description. Will use the docstring if not provided.',
+)
+async def get_all() -> List[GetClass]:
+    return [GetClass.model_validate(item) for item in await Book.fetch_all()]
