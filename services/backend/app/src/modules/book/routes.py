@@ -75,7 +75,8 @@ async def delete_one(id: int) -> DeleteClass:
     res = await ModelClass.delete_by_id(id=id)
     return DeleteClass(
         message=f'Deleted one {ModelClass.__name__} from the database.',
-        count=res,
+        count=1,
+        ids=[id],
     )
 
 
@@ -109,7 +110,8 @@ async def delete_all() -> DeleteClass:
     res =  await ModelClass.delete_all()
     return DeleteClass(
         message=f'Deleted all {pluralize(ModelClass.__name__)} in the database.',
-        count=res,
+        count=len(res),
+        ids=res
     )
 
 

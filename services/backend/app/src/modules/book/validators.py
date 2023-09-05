@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from pydantic import ConfigDict, Field
 
-from src.validators import AppValidator, DeleteAll
+from src.validators import AppValidator, DeleteBulk
 
 
 class BookBase(AppValidator):
@@ -48,5 +48,5 @@ class BookGet(BookBase):
     )
 
 
-class BookDelete(DeleteAll):
+class BookDelete(DeleteBulk):
     pass

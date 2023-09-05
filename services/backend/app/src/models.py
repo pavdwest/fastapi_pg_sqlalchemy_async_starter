@@ -97,20 +97,20 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             return [r for r in res.scalars()]
 
     @classmethod
-    async def delete_by_id(cls, id: int):
+    async def delete_by_id(cls, id: int) -> int:
         async with DatabaseService.get().async_session() as session:
             q = delete(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
             await session.commit()
-            return res.rowcount
+            return id
 
     @classmethod
-    async def delete_all(cls):
+    async def delete_all(cls) -> List[int]:
         async with DatabaseService.get().async_session() as session:
-            q = delete(cls.get_model_class())
+            q = delete(cls.get_model_class()).returning(cls.get_model_class().id)
             res = await session.execute(q)
             await session.commit()
-            return res.rowcount
+            return res.scalars().all()
 
     @classmethod
     async def update_by_id(cls, id: int, data: AppValidator, apply_none_values: bool = False) -> AppModel:
