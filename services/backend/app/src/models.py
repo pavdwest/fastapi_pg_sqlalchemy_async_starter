@@ -15,7 +15,6 @@ from sqlalchemy.orm import (
 from sqlalchemy_utils import get_class_by_table
 from inflection import titleize, pluralize, underscore
 
-from src.logging.service import logger
 from src.database.service import DatabaseService
 from src.validators import AppValidator
 
