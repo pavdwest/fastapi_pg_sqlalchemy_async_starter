@@ -3,16 +3,16 @@ from typing import List
 from fastapi import APIRouter, status, HTTPException
 from inflection import pluralize
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.exc import StaleDataError
 
 from src.database.exceptions import raise_known
 from src.modules.book.models import Book
-from src.modules.book.validators import BookCreate, BookGet, BookDelete
+from src.modules.book.validators import BookCreate, BookGet, BookUpdate, BookDelete
 
 
 ModelClass = Book
 CreateClass = BookCreate
 GetClass = BookGet
+UpdateClass = BookUpdate
 DeleteClass = BookDelete
 
 router = APIRouter(
@@ -43,7 +43,7 @@ async def create_one(item: CreateClass) -> GetClass:
     summary=f"Update a specific {ModelClass.__name__} stored in the database.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def update_one(id: int, item: CreateClass) -> GetClass:
+async def update_one(id: int, item: UpdateClass) -> GetClass:
     db_item = await ModelClass.get_by_id(id=id)
 
     if db_item is None:

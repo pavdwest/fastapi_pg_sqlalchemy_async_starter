@@ -89,7 +89,7 @@ async def test_update_one_with_all_fields(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
+async def test_update_one_with_some_fields(client: AsyncClient):
     item = await Book(
         **{
             'identifier': '978-3-16-148410-4',
@@ -98,7 +98,6 @@ async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
             'release_year': 2041,
         }
     ).save()
-
     response = await client.patch(
         f"/book/{item.id}",
         json={
@@ -129,11 +128,9 @@ async def test_delete_one(client: AsyncClient):
         }
     ).save()
     item_count = await Book.get_count()
-
     response = await client.delete(
         f"/book/{item.id}"
     )
-
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
     assert data['message'] == f'Deleted one Book from the database.'
