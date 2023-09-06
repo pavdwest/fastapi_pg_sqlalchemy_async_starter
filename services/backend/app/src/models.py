@@ -122,7 +122,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
                 await session.commit()
                 return await cls.get_by_id(id=id)
 
-    async def save(self):
+    async def save(self) -> AppModel:
         async with DatabaseService.get().async_session() as session:
             async with session.begin():
                 session.add(self)
