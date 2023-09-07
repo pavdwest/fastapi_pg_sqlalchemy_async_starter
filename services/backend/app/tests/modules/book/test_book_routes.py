@@ -118,6 +118,68 @@ async def test_update_one_with_some_fields(client: AsyncClient):
 
 
 @pytest.mark.anyio
+async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
+    item = await Book(
+        **{
+            'identifier': '978-3-16-148410-8',
+            'name': 'A Brief Horror Story of Time Part 8',
+            'author': 'Stephen Hawk Kingpin',
+            'release_year': 2041,
+        }
+    ).save()
+
+    response = await client.patch(
+        f"/book/{item.id}",
+        json={
+            'id': item.id,
+            'identifier': '978-3-16-148410-9',
+            'name': 'A Brief Horror Story of Time: Payload Time',
+            'author': 'Stephen Hawk Kingsmen Secret Service',
+            'release_year': 2045,
+        }
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data['identifier'] == '978-3-16-148410-9'
+    assert data['name'] == 'A Brief Horror Story of Time: Payload Time'
+    assert data['author'] == 'Stephen Hawk Kingsmen Secret Service'
+    assert data['release_year'] == 2045
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) > item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+
+
+@pytest.mark.anyio
+async def test_update_one_with_payload_with_some_fields(client: AsyncClient):
+    item = await Book(
+        **{
+            'identifier': '978-3-16-148410-12',
+            'name': 'A Brief Horror Story of Time Part 11',
+            'author': 'Stephen Hawk Kingpin',
+            'release_year': 2041,
+        }
+    ).save()
+    response = await client.patch(
+        f"/book/{item.id}",
+        json={
+            'id': item.id,
+            'identifier': '978-3-16-148410-11',
+            'name': 'A Brief Horror Story of Time Part Eleventy',
+            'author': 'Stephen Hawk Kingklip',
+        }
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data['identifier'] == '978-3-16-148410-11'
+    assert data['name'] == 'A Brief Horror Story of Time Part Eleventy'
+    assert data['author'] == 'Stephen Hawk Kingklip'
+    assert data['release_year'] == 2041
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) > item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+
+
+@pytest.mark.anyio
 async def test_delete_one(client: AsyncClient):
     item = await Book(
         **{
@@ -136,3 +198,110 @@ async def test_delete_one(client: AsyncClient):
     assert data['message'] == f'Deleted one Book from the database.'
     assert data['count'] == 1
     assert (await Book.get_count()) == (item_count - 1)
+
+
+@pytest.mark.anyio
+async def test_create_bulk(client: AsyncClient):
+    # Get count before
+    item_count = await Book.get_count()
+
+    # Create items
+    response = await client.post(
+        '/book/bulk',
+        json=[
+                # With all fields
+                {
+                    'identifier': '978-3-16-148410-15',
+                    'name': 'A Brief Horror Story of Time 15',
+                    'author': 'Stephen Hawk Kingston',
+                    'release_year': 2039,
+                },
+                # With only mandatory fields
+                {
+                    'identifier': '978-3-16-148410-16',
+                    'name': 'A Brief Horror Story of Time 16',
+                    'author': 'Stephen Hawk Kingston Jamaica',
+                }
+        ]
+    )
+
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data['message'] == f'Created multiple Books in the database.'
+    assert data['count'] == 2
+    assert (await Book.get_count()) == (item_count + 2)
+
+    # Assert values
+    item1 = await Book.get_by_id(id=data['ids'][0])
+    assert item1.identifier == '978-3-16-148410-15'
+    assert item1.name == 'A Brief Horror Story of Time 15'
+    assert item1.author == 'Stephen Hawk Kingston'
+    assert item1.release_year == 2039
+    assert item1.created_at is not None
+    assert item1.updated_at is not None
+
+    item2 = await Book.get_by_id(id=data['ids'][1])
+    assert item2.identifier == '978-3-16-148410-16'
+    assert item2.name == 'A Brief Horror Story of Time 16'
+    assert item2.author == 'Stephen Hawk Kingston Jamaica'
+    assert item2.release_year is None
+    assert item2.created_at is not None
+    assert item2.updated_at is not None
+
+
+@pytest.mark.anyio
+async def test_create_if_not_exists(client: AsyncClient):
+    # Create items
+    response = await client.put(
+        '/book',
+        json={
+                'identifier': '978-3-16-148410-19',
+                'name': 'A Brief Horror Story of Time 19',
+                'author': 'Stephen Hawk Kingpinwheel',
+                'release_year': 2022,
+        }
+    )
+
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data['identifier'] == '978-3-16-148410-19'
+    assert data['name'] == 'A Brief Horror Story of Time 19'
+    assert data['author'] == 'Stephen Hawk Kingpinwheel'
+    assert data['release_year'] == 2022
+    assert data['created_at'] is not None
+    assert data['updated_at'] is not None
+
+
+@pytest.mark.anyio
+async def test_update_if_exists(client: AsyncClient):
+    item = await Book(
+        **{
+            'identifier': '978-3-16-148410-21',
+            'name': 'A Brief Horror Story of Time 20',
+            'author': 'Stephen Hawk Kingmaker',
+            'release_year': 2022,
+        }
+    ).save()
+
+    # Create items
+    response = await client.put(
+        '/book',
+        json={
+                'identifier': '978-3-16-148410-21',
+                'name': 'A Brief Horror Story of Time 21',
+                'author': 'Stephen Hawk Kingmakers Mark',
+                'release_year': 2023,
+        }
+    )
+
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data['identifier'] == '978-3-16-148410-21'
+    assert data['name'] == 'A Brief Horror Story of Time 21'
+    assert data['author'] == 'Stephen Hawk Kingmakers Mark'
+    assert data['release_year'] == 2023
+    assert data['created_at'] is not None
+    assert data['updated_at'] is not None

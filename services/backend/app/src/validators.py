@@ -3,16 +3,21 @@ from pydantic import BaseModel
 
 
 class AppValidator(BaseModel):
-    pass
+    def to_dict(
+        self,
+        remove_none_values: bool = False,
+        remove_keys: List[str] = None,
+    ) -> Dict:
+        d = self.__dict__
+        if remove_keys is not None:
+            d = {k: v for k, v in d.items() if k not in remove_keys}
+
+        return {
+            k: v for k, v in d.items() if v is not None or not remove_none_values
+        }
 
 
-class DeleteBulk(AppValidator):
-    message: str
-    count: int
-    ids: List[int]
-
-
-class CreateBulk(AppValidator):
+class Bulk(AppValidator):
     message: str
     count: int
     ids: List[int]

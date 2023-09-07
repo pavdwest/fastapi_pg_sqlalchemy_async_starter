@@ -4,7 +4,8 @@ from typing import List
 from datetime import datetime
 
 from sqlalchemy import BigInteger
-from sqlalchemy import select, delete, update
+from sqlalchemy import select, delete, update, insert
+from sqlalchemy.dialects.postgresql import insert as upsert
 from sqlalchemy import func
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import (
@@ -74,6 +75,13 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
         return pluralize(titleize(cls.__tablename__))
 
     @classmethod
+    @lru_cache(maxsize=1)
+    def get_unique_fields(cls):
+        return [
+                c.name for c in cls.get_model_class().__table__.columns if c.unique
+        ]
+
+    @classmethod
     async def init_orm(cls):
         async with DatabaseService.get().async_engine.begin() as conn:
             # logger.warning("Creating tables...")
@@ -116,10 +124,43 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
         async with DatabaseService.get().async_session() as session:
             async with session.begin():
                 q = update(cls.get_model_class())
-                data_noneified = {k: v for k, v in data.__dict__.items() if v is not None or apply_none_values}
-                res = await session.execute(q, [{'id': id, **data_noneified}])
+                res = await session.execute(
+                    q,
+                    [
+                        {
+                            'id': id,
+                            **data.to_dict(remove_none_values=not apply_none_values)
+                        }
+                    ]
+                )
                 await session.commit()
                 return await cls.get_by_id(id=id)
+
+    @classmethod
+    async def create_many(cls, data: List[AppValidator]) -> List[int]:
+        async with DatabaseService.get().async_session() as session:
+            async with session.begin():
+                q = insert(cls.get_model_class()).returning(cls.get_model_class().id)
+                res = await session.execute(q, [d.to_dict() for d in data])
+                await session.commit()
+                return res.scalars().all()
+
+    @classmethod
+    async def upsert(cls, data: AppValidator, apply_none_values: bool = False) -> AppModel:
+        async with DatabaseService.get().async_session() as session:
+            async with session.begin():
+                q = upsert(cls.get_model_class())
+                q = q.on_conflict_do_update(
+                    index_elements=cls.get_unique_fields(),
+                    set_=data.to_dict(
+                        remove_keys=cls.get_unique_fields(),
+                        remove_none_values=not apply_none_values,
+                    )
+                )
+                q = q.returning(cls.get_model_class().id)
+                res = await session.execute(q, data.to_dict())
+                await session.commit()
+                return await cls.get_by_id(id=res.scalar())
 
     async def save(self) -> AppModel:
         async with DatabaseService.get().async_session() as session:

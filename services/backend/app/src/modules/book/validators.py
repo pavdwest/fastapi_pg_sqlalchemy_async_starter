@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from pydantic import ConfigDict, Field
 
-from src.validators import AppValidator, DeleteBulk
+from src.validators import AppValidator
 
 
 class BookBase(AppValidator):
@@ -55,5 +55,9 @@ class BookUpdate(AppValidator):
     release_year: Optional[int] = Field(title='Release Year', examples=[1994, 2023], default=None)
 
 
-class BookDelete(DeleteBulk):
-    pass
+class BookUpdateWithPayload(AppValidator):
+    id:           int           = Field(examples=[127, 667])
+    identifier:   Optional[str] = Field(description='ISBN', examples=['978-0-618-68000-9', '978-3-16-148410-0'], default=None)
+    name:         Optional[str] = Field(examples=['A Brief Horror Story of Time', 'The Book of Nod'], default=None)
+    author:       Optional[str] = Field(examples=['Oliver Twist', 'Bill Shakes Pierre'], default=None)
+    release_year: Optional[int] = Field(title='Release Year', examples=[1994, 2023], default=None)
