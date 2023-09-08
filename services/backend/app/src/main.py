@@ -1,5 +1,4 @@
 from src.app import app
-
 from src.route_manager import register_routes
 from src.models import AppModel
 
