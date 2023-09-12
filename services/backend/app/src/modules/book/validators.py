@@ -9,7 +9,7 @@ from src.validators import AppValidator
 class BookBase(AppValidator):
     identifier:   str           = Field(description='ISBN', examples=['978-0-618-68000-9', '978-3-16-148410-0'])
     name:         str           = Field(examples=['A Brief Horror Story of Time', 'The Book of Nod'])
-    author:       str           = Field(examples=['Oliver Twist', 'Bill Shakes Pierre'])
+    author:       str           = Field(examples=['Twisted Oliver', 'Bill Shakes Pierre'])
     release_year: Optional[int] = Field(title='Release Year', default=None, examples=[1994, 2023])
 
 
@@ -51,7 +51,7 @@ class BookGet(BookBase):
 class BookUpdate(AppValidator):
     identifier:   Optional[str] = Field(description='ISBN', examples=['978-0-618-68000-9', '978-3-16-148410-0'], default=None)
     name:         Optional[str] = Field(examples=['A Brief Horror Story of Time', 'The Book of Nod'], default=None)
-    author:       Optional[str] = Field(examples=['Oliver Twist', 'Bill Shakes Pierre'], default=None)
+    author:       Optional[str] = Field(examples=['Twisted Oliver', 'Bill Shakes Pierre'], default=None)
     release_year: Optional[int] = Field(title='Release Year', examples=[1994, 2023], default=None)
 
 
@@ -59,5 +59,5 @@ class BookUpdateWithPayload(AppValidator):
     id:           int           = Field(examples=[127, 667])
     identifier:   Optional[str] = Field(description='ISBN', examples=['978-0-618-68000-9', '978-3-16-148410-0'], default=None)
     name:         Optional[str] = Field(examples=['A Brief Horror Story of Time', 'The Book of Nod'], default=None)
-    author:       Optional[str] = Field(examples=['Oliver Twist', 'Bill Shakes Pierre'], default=None)
+    author:       Optional[str] = Field(examples=['Twisted Oliver', 'Bill Shakes Pierre'], default=None)
     release_year: Optional[int] = Field(title='Release Year', examples=[1994, 2023], default=None)

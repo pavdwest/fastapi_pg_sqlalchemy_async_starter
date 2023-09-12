@@ -1,9 +1,11 @@
 from __future__ import annotations
+from ast import Dict
 from functools import lru_cache
 from typing import List
+from typing_extensions import Self
 from datetime import datetime
 
-from sqlalchemy import BigInteger
+from sqlalchemy import BigInteger, Insert
 from sqlalchemy import select, delete, update, insert
 from sqlalchemy.dialects.postgresql import insert as upsert
 from sqlalchemy import func
@@ -24,7 +26,7 @@ class IdMixin:
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
     @classmethod
-    async def get_by_id(cls, id: int) -> AppModel:
+    async def get_by_id(cls, id: int) -> Self:
         async with DatabaseService.get().async_session() as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
@@ -43,7 +45,7 @@ class IdentifierMixin:
     identifier: Mapped[str] = mapped_column(unique=True)
 
     @classmethod
-    async def get_by_identifier(cls, identifier: str) -> AppModel:
+    async def get_by_identifier(cls, identifier: str) -> Self:
         async with DatabaseService.get().async_session() as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().identifier == identifier)
             res = await session.execute(q)
@@ -78,7 +80,14 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
     @lru_cache(maxsize=1)
     def get_unique_fields(cls):
         return [
-                c.name for c in cls.get_model_class().__table__.columns if c.unique
+            c.name for c in cls.get_model_class().__table__.columns if c.unique
+        ]
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_settable_fields(cls):
+        return [
+            c.name for c in cls.get_model_class().__table__.columns if c.name not in ['id', 'created_at', 'updated_at']
         ]
 
     @classmethod
@@ -97,7 +106,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             return res.scalar()
 
     @classmethod
-    async def fetch_all(cls) -> List[AppModel]:
+    async def fetch_all(cls) -> List[Self]:
         async with DatabaseService.get().async_session() as session:
             q = select(cls.get_model_class())
             res = await session.execute(q)
@@ -120,7 +129,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             return res.scalars().all()
 
     @classmethod
-    async def update_by_id(cls, id: int, data: AppValidator, apply_none_values: bool = False) -> AppModel:
+    async def update_by_id(cls, id: int, data: AppValidator, apply_none_values: bool = False) -> Self:
         async with DatabaseService.get().async_session() as session:
             async with session.begin():
                 q = update(cls.get_model_class())
@@ -146,23 +155,43 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
                 return res.scalars().all()
 
     @classmethod
-    async def upsert(cls, data: AppValidator, apply_none_values: bool = False) -> AppModel:
+    def get_on_conflict_params(cls, q: Insert) -> Dict:
+        fields = [f for f in cls.get_settable_fields() if f not in cls.get_unique_fields()]
+        d = {}
+        for f in fields:
+            d[f] = q.excluded[f]
+        return d
+
+    @classmethod
+    async def upsert(cls, data: AppValidator, apply_none_values: bool = False) -> Self:
         async with DatabaseService.get().async_session() as session:
             async with session.begin():
                 q = upsert(cls.get_model_class())
                 q = q.on_conflict_do_update(
                     index_elements=cls.get_unique_fields(),
-                    set_=data.to_dict(
-                        remove_keys=cls.get_unique_fields(),
-                        remove_none_values=not apply_none_values,
-                    )
+                    set_=cls.get_on_conflict_params(q=q)
                 )
                 q = q.returning(cls.get_model_class().id)
                 res = await session.execute(q, data.to_dict())
                 await session.commit()
                 return await cls.get_by_id(id=res.scalar())
 
-    async def save(self) -> AppModel:
+    @classmethod
+    async def upsert_many(cls, data: List[AppValidator], apply_none_values: bool = False) -> List[int]:
+        async with DatabaseService.get().async_session() as session:
+            async with session.begin():
+                q = upsert(cls.get_model_class())
+                set_ = [item.to_dict(remove_keys=cls.get_unique_fields(), remove_none_values=not apply_none_values) for item in data]
+                q = q.on_conflict_do_update(
+                    index_elements=cls.get_unique_fields(),
+                    set_=cls.get_on_conflict_params(q=q),
+                )
+                q = q.returning(cls.get_model_class().id)
+                res = await session.execute(q, [item.to_dict(remove_none_values=not apply_none_values) for item in data])
+                await session.commit()
+                return res.scalars().all()
+
+    async def save(self) -> Self:
         async with DatabaseService.get().async_session() as session:
             async with session.begin():
                 session.add(self)

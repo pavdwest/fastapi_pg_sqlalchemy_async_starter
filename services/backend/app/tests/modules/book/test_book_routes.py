@@ -305,3 +305,118 @@ async def test_update_if_exists(client: AsyncClient):
     assert data['release_year'] == 2023
     assert data['created_at'] is not None
     assert data['updated_at'] is not None
+
+
+@pytest.mark.anyio
+async def test_create_or_update_bulk(client: AsyncClient):
+    # Get count before
+    item_count = await Book.get_count()
+
+    # Create items
+    response = await client.put(
+        '/book/bulk',
+        json=[
+                # With all fields
+                {
+                    'identifier': '978-3-16-148410-35',
+                    'name': 'A Brief Horror Story of Time 31',
+                    'author': 'Stephen Hawk Kingstongue',
+                    'release_year': 2039,
+                },
+                # With only mandatory fields
+                {
+                    'identifier': '978-3-16-148410-36',
+                    'name': 'A Brief Horror Story of Time 35',
+                    'author': 'Stephen Hawk Kingstonic',
+                }
+        ]
+    )
+
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data['message'] == f'Created or updated multiple Books in the database.'
+    assert data['count'] == 2
+    assert (await Book.get_count()) == (item_count + 2)
+
+    # Assert values
+    item1 = await Book.get_by_id(id=data['ids'][0])
+    assert item1.identifier == '978-3-16-148410-35'
+    assert item1.name == 'A Brief Horror Story of Time 31'
+    assert item1.author == 'Stephen Hawk Kingstongue'
+    assert item1.release_year == 2039
+    assert item1.created_at is not None
+    assert item1.updated_at is not None
+
+    item2 = await Book.get_by_id(id=data['ids'][1])
+    assert item2.identifier == '978-3-16-148410-36'
+    assert item2.name == 'A Brief Horror Story of Time 35'
+    assert item2.author == 'Stephen Hawk Kingstonic'
+    assert item2.release_year is None
+    assert item2.created_at is not None
+    assert item2.updated_at is not None
+
+    item_count_pre_update = await Book.get_count()
+
+    # Update items
+    response = await client.put(
+        '/book/bulk',
+        json=[
+                # With all fields
+                {
+                    'identifier': '978-3-16-148410-35',
+                    'name': 'A Brief Horror Story of Time 35',
+                    'author': 'Stephen Hawk Kingstongues',
+                    'release_year': 2049,
+                },
+                # With only mandatory fields
+                {
+                    'identifier': '978-3-16-148410-36',
+                    'name': 'A Brief Horror Story of Time 36',
+                    'author': 'Stephen Hawk Kingstonic And Gin',
+                }
+        ]
+    )
+
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data['message'] == f'Created or updated multiple Books in the database.'
+    assert data['count'] == 2
+    assert (await Book.get_count()) == item_count_pre_update
+
+    # Assert values
+    item3 = await Book.get_by_id(id=data['ids'][0])
+    assert item3.id == item1.id
+    assert item3.identifier == '978-3-16-148410-35'
+    assert item3.name == 'A Brief Horror Story of Time 35'
+    assert item3.author == 'Stephen Hawk Kingstongues'
+    assert item3.release_year == 2049
+    assert item3.created_at is not None
+    assert item3.updated_at is not None
+
+    item4 = await Book.get_by_id(id=data['ids'][1])
+    assert item4.id == item2.id
+    assert item4.identifier == '978-3-16-148410-36'
+    assert item4.name == 'A Brief Horror Story of Time 36'
+    assert item4.author == 'Stephen Hawk Kingstonic And Gin'
+    assert item4.release_year is None
+    assert item4.created_at is not None
+    assert item4.updated_at is not None
+
+
+@pytest.mark.anyio
+async def test_get_all_full(client: AsyncClient):
+    # Get from route
+    response = await client.get(
+        '/book'
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    all_books_route = response.json()
+    # all_books_route.sort(key='id')
+
+    # Get directly from db
+    all_books_db = await Book.fetch_all()
+    # all_books_db.sort(key='id')
+
+    # assert len(all_books_route) == len(all_books_db)

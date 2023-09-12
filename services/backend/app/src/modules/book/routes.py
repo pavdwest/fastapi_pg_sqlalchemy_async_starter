@@ -69,7 +69,7 @@ async def update_one(id: int, item: UpdateClass) -> GetClass:
     summary=f"Update a specific {ModelClass.__name__} stored in the database.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def update_one_with_payload(item: BookUpdateWithPayload) -> GetClass:
+async def update_one_by_payload(item: BookUpdateWithPayload) -> GetClass:
     db_item = await ModelClass.get_by_id(id=item.id)
 
     if db_item is None:
@@ -179,6 +179,25 @@ async def create_many(items: List[CreateClass]) -> Bulk:
         res = await ModelClass.create_many(data=items)
         return Bulk(
             message=f'Created multiple {pluralize(ModelClass.__name__)} in the database.',
+            count=len(res),
+            ids=res
+        )
+    except IntegrityError as e:
+        raise_known(e)
+
+
+@router.put(
+    '/bulk',
+    response_model=Bulk,
+    status_code=status.HTTP_200_OK,
+    summary=f"Create or update many {pluralize(ModelClass.__name__)} in the database.",
+    description='Endpoint description. Will use the docstring if not provided.',
+)
+async def create_or_update_many(items: List[UpdateClass]) -> Bulk:
+    try:
+        res = await ModelClass.upsert_many(data=items, apply_none_values=False)
+        return Bulk(
+            message=f'Created or updated multiple {pluralize(ModelClass.__name__)} in the database.',
             count=len(res),
             ids=res
         )
