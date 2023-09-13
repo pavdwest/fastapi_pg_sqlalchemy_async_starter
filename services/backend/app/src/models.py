@@ -155,12 +155,13 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
                 return res.scalars().all()
 
     @classmethod
+    @lru_cache(maxsize=1)
+    def get_on_conflict_fields(cls) -> List[str]:
+        return [f for f in cls.get_settable_fields() if f not in cls.get_unique_fields()]
+
+    @classmethod
     def get_on_conflict_params(cls, q: Insert) -> Dict:
-        fields = [f for f in cls.get_settable_fields() if f not in cls.get_unique_fields()]
-        d = {}
-        for f in fields:
-            d[f] = q.excluded[f]
-        return d
+        return { f: q.excluded[f] for f in cls.get_on_conflict_fields() }
 
     @classmethod
     async def upsert(cls, data: AppValidator, apply_none_values: bool = False) -> Self:
