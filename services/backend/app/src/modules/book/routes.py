@@ -4,6 +4,7 @@ from fastapi import APIRouter, status, HTTPException
 from inflection import pluralize
 from sqlalchemy.exc import IntegrityError
 
+from src.versions import ApiVersion
 from src.database.exceptions import raise_known
 from src.modules.book.models import Book
 from src.validators import Bulk
@@ -11,7 +12,7 @@ from src.modules.book.validators import (
     BookCreate,
     BookGet,
     BookUpdate,
-    BookUpdateWithPayload
+    BookUpdateWithId
 )
 
 
@@ -23,7 +24,7 @@ UpdateClass = BookUpdate
 
 router = APIRouter(
     tags=[ModelClass.__tablename_friendly__],
-    prefix=f"/{ModelClass.__tablename__}",
+    prefix=f"{ApiVersion.V1}/{ModelClass.__tablename__}",
 )
 
 
@@ -63,13 +64,13 @@ async def update_one(id: int, item: UpdateClass) -> GetClass:
 
 
 @router.patch(
-    '/',
+    '',
     response_model=GetClass,
     status_code=status.HTTP_200_OK,
-    summary=f"Update a specific {ModelClass.__name__} stored in the database.",
+    summary=f"Update a specific {ModelClass.__name__} stored in the database (`id` included in the payload).",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def update_one_by_payload(item: BookUpdateWithPayload) -> GetClass:
+async def update_one_with_id(item: BookUpdateWithId) -> GetClass:
     db_item = await ModelClass.get_by_id(id=item.id)
 
     if db_item is None:
@@ -171,7 +172,7 @@ async def get_all() -> List[GetClass]:
     '/bulk',
     response_model=Bulk,
     status_code=status.HTTP_200_OK,
-    summary=f"Create one {ModelClass.__name__} in the database.",
+    summary=f"Create multiple {pluralize(ModelClass.__name__)} in the database.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def create_many(items: List[CreateClass]) -> Bulk:

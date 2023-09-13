@@ -2,14 +2,17 @@ from typing import Dict
 
 from fastapi import APIRouter, status, Response
 
+from src.versions import ApiVersion
+
 
 router = APIRouter(
-    tags=['Home']
+    tags=['Home'],
+    prefix=f"{ApiVersion.V1}/home",
 )
 
 
 @router.get(
-    '/home',
+    '',
     response_model=Dict,
     status_code=status.HTTP_200_OK,
     summary='Returns 200 if service is up and running',

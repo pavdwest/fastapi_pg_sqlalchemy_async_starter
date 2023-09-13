@@ -9,7 +9,7 @@ from src.modules.book.models import Book
 @pytest.mark.anyio
 async def test_get_all_empty(client: AsyncClient):
     response = await client.get(
-        '/book'
+        '/api/v1/book'
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
@@ -19,7 +19,7 @@ async def test_get_all_empty(client: AsyncClient):
 @pytest.mark.anyio
 async def test_create_one_with_all_fields(client: AsyncClient):
     response = await client.post(
-        '/book',
+        '/api/v1/book',
         json={
             'identifier': '978-3-16-148410-0',
             'name': 'A Brief Horror Story of Time',
@@ -40,7 +40,7 @@ async def test_create_one_with_all_fields(client: AsyncClient):
 @pytest.mark.anyio
 async def test_create_one_with_only_mandatory_fields(client: AsyncClient):
     response = await client.post(
-        '/book',
+        '/api/v1/book',
         json={
             'identifier': '978-3-16-148410-1',
             'name': 'A Brief Horror Story of Time Part Deux',
@@ -69,7 +69,7 @@ async def test_update_one_with_all_fields(client: AsyncClient):
     ).save()
 
     response = await client.patch(
-        f"/book/{item.id}",
+        f"/api/v1/book/{item.id}",
         json={
             'identifier': '978-3-16-148410-3',
             'name': 'A Brief Horror Story of Time Part 3',
@@ -99,7 +99,7 @@ async def test_update_one_with_some_fields(client: AsyncClient):
         }
     ).save()
     response = await client.patch(
-        f"/book/{item.id}",
+        f"/api/v1/book/{item.id}",
         json={
             'identifier': '978-3-16-148410-5',
             'name': 'A Brief Horror Story of Time Part 4',
@@ -129,7 +129,7 @@ async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
     ).save()
 
     response = await client.patch(
-        f"/book/{item.id}",
+        f"/api/v1/book/{item.id}",
         json={
             'id': item.id,
             'identifier': '978-3-16-148410-9',
@@ -160,7 +160,7 @@ async def test_update_one_with_payload_with_some_fields(client: AsyncClient):
         }
     ).save()
     response = await client.patch(
-        f"/book/{item.id}",
+        f"/api/v1/book/{item.id}",
         json={
             'id': item.id,
             'identifier': '978-3-16-148410-11',
@@ -191,7 +191,7 @@ async def test_delete_one(client: AsyncClient):
     ).save()
     item_count = await Book.get_count()
     response = await client.delete(
-        f"/book/{item.id}"
+        f"/api/v1/book/{item.id}"
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
@@ -207,7 +207,7 @@ async def test_create_bulk(client: AsyncClient):
 
     # Create items
     response = await client.post(
-        '/book/bulk',
+        '/api/v1/book/bulk',
         json=[
                 # With all fields
                 {
@@ -254,7 +254,7 @@ async def test_create_bulk(client: AsyncClient):
 async def test_create_if_not_exists(client: AsyncClient):
     # Create items
     response = await client.put(
-        '/book',
+        '/api/v1/book',
         json={
                 'identifier': '978-3-16-148410-19',
                 'name': 'A Brief Horror Story of Time 19',
@@ -287,7 +287,7 @@ async def test_update_if_exists(client: AsyncClient):
 
     # Create items
     response = await client.put(
-        '/book',
+        '/api/v1/book',
         json={
                 'identifier': '978-3-16-148410-21',
                 'name': 'A Brief Horror Story of Time 21',
@@ -314,7 +314,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
 
     # Create items
     response = await client.put(
-        '/book/bulk',
+        '/api/v1/book/bulk',
         json=[
                 # With all fields
                 {
@@ -360,7 +360,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
 
     # Update items
     response = await client.put(
-        '/book/bulk',
+        '/api/v1/book/bulk',
         json=[
                 # With all fields
                 {
@@ -409,7 +409,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
 async def test_get_all_full(client: AsyncClient):
     # Get from route
     response = await client.get(
-        '/book'
+        '/api/v1/book'
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     all_books_route = response.json()
