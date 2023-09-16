@@ -1,9 +1,10 @@
 from __future__ import annotations
 from ast import Dict
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 from typing_extensions import Self
 from datetime import datetime
+from pkg_resources import require
 
 from sqlalchemy import BigInteger, Insert
 from sqlalchemy import select, delete, update, insert
@@ -53,11 +54,11 @@ class IdentifierMixin:
 
 
 class NameMixin:
-    name: Mapped[str] = mapped_column()
+    name: Mapped[Optional[str]] = mapped_column(nullable=True)
 
 
 class DescriptionMixin:
-    identifier: Mapped[str] = mapped_column()
+    name: Mapped[Optional[str]] = mapped_column(nullable=True)
 
 
 class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):

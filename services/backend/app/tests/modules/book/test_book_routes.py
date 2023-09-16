@@ -3,13 +3,18 @@ import pytest
 from httpx import AsyncClient
 from datetime import datetime
 
+from src.versions import ApiVersion
 from src.modules.book.models import Book
+
+
+model_class = Book
+route_base = f"{ApiVersion.V1}/{model_class.__tablename__}"
 
 
 @pytest.mark.anyio
 async def test_get_all_empty(client: AsyncClient):
     response = await client.get(
-        '/api/v1/book'
+        route_base
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
@@ -19,7 +24,7 @@ async def test_get_all_empty(client: AsyncClient):
 @pytest.mark.anyio
 async def test_create_one_with_all_fields(client: AsyncClient):
     response = await client.post(
-        '/api/v1/book',
+        route_base,
         json={
             'identifier': '978-3-16-148410-0',
             'name': 'A Brief Horror Story of Time',
@@ -40,7 +45,7 @@ async def test_create_one_with_all_fields(client: AsyncClient):
 @pytest.mark.anyio
 async def test_create_one_with_only_mandatory_fields(client: AsyncClient):
     response = await client.post(
-        '/api/v1/book',
+        route_base,
         json={
             'identifier': '978-3-16-148410-1',
             'name': 'A Brief Horror Story of Time Part Deux',
@@ -89,7 +94,37 @@ async def test_update_one_with_all_fields(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_update_one_with_some_fields(client: AsyncClient):
+async def test_update_one_does_not_apply_none(client: AsyncClient):
+    item = await Book(
+        **{
+            'identifier': '978-3-16-148410-88',
+            'name': 'A Brief Horror Story of Time Part 89',
+            'author': 'Stephen Hawk Kingpin',
+            'release_year': 2041,
+        }
+    ).save()
+
+    response = await client.patch(
+        f"/api/v1/book/{item.id}",
+        json={
+            'identifier': '978-3-16-148410-89',
+            'name': '',
+            'author': None,
+        }
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert data['identifier'] == '978-3-16-148410-89'
+    assert data['name'] == ''
+    assert data['author'] == 'Stephen Hawk Kingpin'
+    assert data['release_year'] == 2041
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) > item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+
+
+@pytest.mark.anyio
+async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
     item = await Book(
         **{
             'identifier': '978-3-16-148410-4',
@@ -150,7 +185,7 @@ async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_update_one_with_payload_with_some_fields(client: AsyncClient):
+async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncClient):
     item = await Book(
         **{
             'identifier': '978-3-16-148410-12',
@@ -207,7 +242,7 @@ async def test_create_bulk(client: AsyncClient):
 
     # Create items
     response = await client.post(
-        '/api/v1/book/bulk',
+        f"{route_base}/bulk",
         json=[
                 # With all fields
                 {
@@ -254,7 +289,7 @@ async def test_create_bulk(client: AsyncClient):
 async def test_create_if_not_exists(client: AsyncClient):
     # Create items
     response = await client.put(
-        '/api/v1/book',
+        route_base,
         json={
                 'identifier': '978-3-16-148410-19',
                 'name': 'A Brief Horror Story of Time 19',
@@ -276,6 +311,7 @@ async def test_create_if_not_exists(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_update_if_exists(client: AsyncClient):
+    # Create item
     item = await Book(
         **{
             'identifier': '978-3-16-148410-21',
@@ -285,9 +321,9 @@ async def test_update_if_exists(client: AsyncClient):
         }
     ).save()
 
-    # Create items
+    # Update item
     response = await client.put(
-        '/api/v1/book',
+        route_base,
         json={
                 'identifier': '978-3-16-148410-21',
                 'name': 'A Brief Horror Story of Time 21',
@@ -314,7 +350,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
 
     # Create items
     response = await client.put(
-        '/api/v1/book/bulk',
+        f"{route_base}/bulk",
         json=[
                 # With all fields
                 {
@@ -360,7 +396,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
 
     # Update items
     response = await client.put(
-        '/api/v1/book/bulk',
+        f"{route_base}/bulk",
         json=[
                 # With all fields
                 {
@@ -409,7 +445,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
 async def test_get_all_full(client: AsyncClient):
     # Get from route
     response = await client.get(
-        '/api/v1/book'
+        route_base
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     all_books_route = response.json()
