@@ -468,16 +468,12 @@ async def test_get_all_full(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     all_items_route = response.json()
-
-    # Sort all_items_route by id ascending
     all_items_route.sort(key=lambda x: x['id'])
 
     # Get directly from db
     all_items_db = await Book.fetch_all()
-    # Sort all_items_db by id ascending
     all_items_db.sort(key=lambda x: x.id)
 
-    # assert all_items_route == all_items_db
     for i in range(len(all_items_route)):
         assert all_items_route[i]['id'] == all_items_db[i].id
         assert all_items_route[i]['identifier'] == all_items_db[i].identifier
@@ -488,7 +484,6 @@ async def test_get_all_full(client: AsyncClient):
         assert all_items_route[i]['updated_at'] == all_items_db[i].updated_at.isoformat()
 
     # Verify the last two items retrieved from the route are the ones created at the start of the test
-    # Get second last item idx in all_items_route
     second_last_idx = len(all_items_route) - 2
     assert all_items_route[second_last_idx]['id'] == item_second_last.id
     assert all_items_route[second_last_idx]['identifier'] == item_second_last.identifier

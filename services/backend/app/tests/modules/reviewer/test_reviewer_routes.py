@@ -422,13 +422,10 @@ async def test_get_all_full(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     all_items_route = response.json()
-
-    # Sort all_items_route by id ascending
     all_items_route.sort(key=lambda x: x['id'])
 
     # Get directly from db
     all_items_db = await Reviewer.fetch_all()
-    # Sort all_items_db by id ascending
     all_items_db.sort(key=lambda x: x.id)
 
     # assert all_items_route == all_items_db
