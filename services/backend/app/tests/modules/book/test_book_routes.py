@@ -443,16 +443,66 @@ async def test_create_or_update_bulk(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_get_all_full(client: AsyncClient):
+    # Create two items
+    item_second_last = await Book(
+        **{
+            'identifier': '978-3-16-148410-45',
+            'name': 'A Brief Horror Story of Time 45',
+            'author': 'Stephen Hawk Kingstonguescargot',
+            'release_year': 2055,
+        }
+    ).save()
+
+    item_last = await Book(
+        **{
+            'identifier': '978-3-16-148410-46',
+            'name': 'A Brief Horror Story of Time 46',
+            'author': 'Stephen Hawk Kingstonguescargotcha',
+            'release_year': 2057,
+        }
+    ).save()
+
     # Get from route
     response = await client.get(
         route_base
     )
     assert response.status_code == status.HTTP_200_OK, response.text
-    all_books_route = response.json()
-    # all_books_route.sort(key='id')
+    all_items_route = response.json()
+
+    # Sort all_items_route by id ascending
+    all_items_route.sort(key=lambda x: x['id'])
 
     # Get directly from db
-    all_books_db = await Book.fetch_all()
-    # all_books_db.sort(key='id')
+    all_items_db = await Book.fetch_all()
+    # Sort all_items_db by id ascending
+    all_items_db.sort(key=lambda x: x.id)
 
-    # assert len(all_books_route) == len(all_books_db)
+    # assert all_items_route == all_items_db
+    for i in range(len(all_items_route)):
+        assert all_items_route[i]['id'] == all_items_db[i].id
+        assert all_items_route[i]['identifier'] == all_items_db[i].identifier
+        assert all_items_route[i]['name'] == all_items_db[i].name
+        assert all_items_route[i]['author'] == all_items_db[i].author
+        assert all_items_route[i]['release_year'] == all_items_db[i].release_year
+        assert all_items_route[i]['created_at'] == all_items_db[i].created_at.isoformat()
+        assert all_items_route[i]['updated_at'] == all_items_db[i].updated_at.isoformat()
+
+    # Verify the last two items retrieved from the route are the ones created at the start of the test
+    # Get second last item idx in all_items_route
+    second_last_idx = len(all_items_route) - 2
+    assert all_items_route[second_last_idx]['id'] == item_second_last.id
+    assert all_items_route[second_last_idx]['identifier'] == item_second_last.identifier
+    assert all_items_route[second_last_idx]['name'] == item_second_last.name
+    assert all_items_route[second_last_idx]['author'] == item_second_last.author
+    assert all_items_route[second_last_idx]['release_year'] == item_second_last.release_year
+    assert all_items_route[second_last_idx]['created_at'] == item_second_last.created_at.isoformat()
+    assert all_items_route[second_last_idx]['updated_at'] == item_second_last.updated_at.isoformat()
+
+    last_idx = len(all_items_route) - 1
+    assert all_items_route[last_idx]['id'] == item_last.id
+    assert all_items_route[last_idx]['identifier'] == item_last.identifier
+    assert all_items_route[last_idx]['name'] == item_last.name
+    assert all_items_route[last_idx]['author'] == item_last.author
+    assert all_items_route[last_idx]['release_year'] == item_last.release_year
+    assert all_items_route[last_idx]['created_at'] == item_last.created_at.isoformat()
+    assert all_items_route[last_idx]['updated_at'] == item_last.updated_at.isoformat()

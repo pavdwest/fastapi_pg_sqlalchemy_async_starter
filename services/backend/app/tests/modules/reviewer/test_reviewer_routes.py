@@ -399,16 +399,61 @@ async def test_create_or_update_bulk(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_get_all_full(client: AsyncClient):
+    # Create two items
+    item_second_last = await Reviewer(
+        **{
+            'username': 'ultimate_worryer2003',
+            'bio': 'I like to read books and write wrongs',
+            'name': 'DeBooker DeDimwitte',
+        }
+    ).save()
+
+    item_last = await Reviewer(
+        **{
+            'username': 'ultimate_worryer2004',
+            'bio': 'I like to write books and read wrongs',
+            'name': 'DeBooker DeDimwittelemetry',
+        }
+    ).save()
+
     # Get from route
     response = await client.get(
         route_base
     )
     assert response.status_code == status.HTTP_200_OK, response.text
-    all_books_route = response.json()
-    # all_books_route.sort(key='id')
+    all_items_route = response.json()
+
+    # Sort all_items_route by id ascending
+    all_items_route.sort(key=lambda x: x['id'])
 
     # Get directly from db
-    all_books_db = await Reviewer.fetch_all()
-    # all_books_db.sort(key='id')
+    all_items_db = await Reviewer.fetch_all()
+    # Sort all_items_db by id ascending
+    all_items_db.sort(key=lambda x: x.id)
 
-    # assert len(all_books_route) == len(all_books_db)
+    # assert all_items_route == all_items_db
+    for i in range(len(all_items_route)):
+        assert all_items_route[i]['id'] == all_items_db[i].id
+        assert all_items_route[i]['username'] == all_items_db[i].username
+        assert all_items_route[i]['bio'] == all_items_db[i].bio
+        assert all_items_route[i]['name'] == all_items_db[i].name
+        assert all_items_route[i]['created_at'] == all_items_db[i].created_at.isoformat()
+        assert all_items_route[i]['updated_at'] == all_items_db[i].updated_at.isoformat()
+
+    # Verify the last two items retrieved from the route are the ones created at the start of the test
+    # Get second last item idx in all_items_route
+    second_last_idx = len(all_items_route) - 2
+    assert all_items_route[second_last_idx]['id'] == item_second_last.id
+    assert all_items_route[second_last_idx]['username'] == item_second_last.username
+    assert all_items_route[second_last_idx]['bio'] == item_second_last.bio
+    assert all_items_route[second_last_idx]['name'] == item_second_last.name
+    assert all_items_route[second_last_idx]['created_at'] == item_second_last.created_at.isoformat()
+    assert all_items_route[second_last_idx]['updated_at'] == item_second_last.updated_at.isoformat()
+
+    last_idx = len(all_items_route) - 1
+    assert all_items_route[last_idx]['id'] == item_last.id
+    assert all_items_route[last_idx]['username'] == item_last.username
+    assert all_items_route[last_idx]['bio'] == item_last.bio
+    assert all_items_route[last_idx]['name'] == item_last.name
+    assert all_items_route[last_idx]['created_at'] == item_last.created_at.isoformat()
+    assert all_items_route[last_idx]['updated_at'] == item_last.updated_at.isoformat()
