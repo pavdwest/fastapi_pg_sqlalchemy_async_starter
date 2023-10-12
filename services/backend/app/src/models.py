@@ -95,8 +95,8 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
     async def init_orm(cls):
         async with DatabaseService.get().async_engine.begin() as conn:
             # logger.warning("Creating tables...")
-            # await conn.run_sync(cls.metadata.drop_all)
-            # await conn.run_sync(cls.metadata.create_all)
+            # await conn.run_sync(cls.metaitem.drop_all)
+            # await conn.run_sync(cls.metaitem.create_all)
             pass
 
     @classmethod
@@ -130,7 +130,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             return res.scalars().all()
 
     @classmethod
-    async def update_by_id(cls, id: int, data: AppValidator, apply_none_values: bool = False) -> Self:
+    async def update_by_id(cls, id: int, item: AppValidator, apply_none_values: bool = False) -> Self:
         async with DatabaseService.get().async_session() as session:
             q = update(cls.get_model_class())
             res = await session.execute(
@@ -138,7 +138,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
                 [
                     {
                         'id': id,
-                        **data.to_dict(remove_none_values=not apply_none_values)
+                        **item.to_dict(remove_none_values=not apply_none_values)
                     }
                 ]
             )
@@ -146,10 +146,10 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             return await cls.get_by_id(id=id)
 
     @classmethod
-    async def create_many(cls, data: List[AppValidator]) -> List[int]:
+    async def create_many(cls, items: List[AppValidator]) -> List[int]:
         async with DatabaseService.get().async_session() as session:
             q = insert(cls.get_model_class()).returning(cls.get_model_class().id)
-            res = await session.execute(q, [d.to_dict() for d in data])
+            res = await session.execute(q, [d.to_dict() for d in items])
             await session.commit()
             return res.scalars().all()
 
@@ -163,7 +163,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
         return { f: q.excluded[f] for f in cls.get_on_conflict_fields() }
 
     @classmethod
-    async def upsert(cls, data: AppValidator, apply_none_values: bool = False) -> Self:
+    async def upsert(cls, item: AppValidator, apply_none_values: bool = False) -> Self:
         async with DatabaseService.get().async_session() as session:
             q = upsert(cls.get_model_class())
             q = q.on_conflict_do_update(
@@ -171,21 +171,20 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
                 set_=cls.get_on_conflict_params(q=q)
             )
             q = q.returning(cls.get_model_class().id)
-            res = await session.execute(q, data.to_dict())
+            res = await session.execute(q, item.to_dict())
             await session.commit()
             return await cls.get_by_id(id=res.scalar())
 
     @classmethod
-    async def upsert_many(cls, data: List[AppValidator], apply_none_values: bool = False) -> List[int]:
+    async def upsert_many(cls, items: List[AppValidator], apply_none_values: bool = False) -> List[int]:
         async with DatabaseService.get().async_session() as session:
             q = upsert(cls.get_model_class())
-            set_ = [item.to_dict(remove_keys=cls.get_unique_fields(), remove_none_values=not apply_none_values) for item in data]
             q = q.on_conflict_do_update(
                 index_elements=cls.get_unique_fields(),
                 set_=cls.get_on_conflict_params(q=q),
             )
             q = q.returning(cls.get_model_class().id)
-            res = await session.execute(q, [item.to_dict(remove_none_values=not apply_none_values) for item in data])
+            res = await session.execute(q, [item.to_dict(remove_none_values=not apply_none_values) for item in items])
             await session.commit()
             return res.scalars().all()
 

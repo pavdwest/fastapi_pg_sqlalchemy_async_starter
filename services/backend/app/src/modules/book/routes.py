@@ -59,7 +59,7 @@ async def update_one(id: int, item: UpdateClass) -> GetClass:
             detail=f"Object with id={id} not found."
         )
 
-    res = await ModelClass.update_by_id(id=id, data=item)
+    res = await ModelClass.update_by_id(id=id, item=item)
     return GetClass.model_validate(res)
 
 
@@ -79,7 +79,7 @@ async def update_one_with_id(item: BookUpdateWithId) -> GetClass:
             detail=f"Object with id={id} not found."
         )
 
-    res = await ModelClass.update_by_id(id=item.id, data=item)
+    res = await ModelClass.update_by_id(id=item.id, item=item)
     return GetClass.model_validate(res)
 
 
@@ -92,7 +92,7 @@ async def update_one_with_id(item: BookUpdateWithId) -> GetClass:
 )
 async def create_or_update_one(item: CreateClass) -> GetClass:
     try:
-        res = await ModelClass.upsert(data=item)
+        res = await ModelClass.upsert(item=item)
         return GetClass.model_validate(res)
     except IntegrityError as e:
         raise_known(e)
@@ -177,7 +177,7 @@ async def get_all() -> List[GetClass]:
 )
 async def create_many(items: List[CreateClass]) -> Bulk:
     try:
-        res = await ModelClass.create_many(data=items)
+        res = await ModelClass.create_many(items=items)
         return Bulk(
             message=f'Created multiple {pluralize(ModelClass.__name__)} in the database.',
             count=len(res),
@@ -196,7 +196,7 @@ async def create_many(items: List[CreateClass]) -> Bulk:
 )
 async def create_or_update_many(items: List[UpdateClass]) -> Bulk:
     try:
-        res = await ModelClass.upsert_many(data=items, apply_none_values=False)
+        res = await ModelClass.upsert_many(items=items, apply_none_values=False)
         return Bulk(
             message=f'Created or updated multiple {pluralize(ModelClass.__name__)} in the database.',
             count=len(res),
