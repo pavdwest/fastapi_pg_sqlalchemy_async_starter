@@ -132,28 +132,26 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
     @classmethod
     async def update_by_id(cls, id: int, data: AppValidator, apply_none_values: bool = False) -> Self:
         async with DatabaseService.get().async_session() as session:
-            async with session.begin():
-                q = update(cls.get_model_class())
-                res = await session.execute(
-                    q,
-                    [
-                        {
-                            'id': id,
-                            **data.to_dict(remove_none_values=not apply_none_values)
-                        }
-                    ]
-                )
-                await session.commit()
-                return await cls.get_by_id(id=id)
+            q = update(cls.get_model_class())
+            res = await session.execute(
+                q,
+                [
+                    {
+                        'id': id,
+                        **data.to_dict(remove_none_values=not apply_none_values)
+                    }
+                ]
+            )
+            await session.commit()
+            return await cls.get_by_id(id=id)
 
     @classmethod
     async def create_many(cls, data: List[AppValidator]) -> List[int]:
         async with DatabaseService.get().async_session() as session:
-            async with session.begin():
-                q = insert(cls.get_model_class()).returning(cls.get_model_class().id)
-                res = await session.execute(q, [d.to_dict() for d in data])
-                await session.commit()
-                return res.scalars().all()
+            q = insert(cls.get_model_class()).returning(cls.get_model_class().id)
+            res = await session.execute(q, [d.to_dict() for d in data])
+            await session.commit()
+            return res.scalars().all()
 
     @classmethod
     @lru_cache(maxsize=1)
@@ -167,34 +165,32 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
     @classmethod
     async def upsert(cls, data: AppValidator, apply_none_values: bool = False) -> Self:
         async with DatabaseService.get().async_session() as session:
-            async with session.begin():
-                q = upsert(cls.get_model_class())
-                q = q.on_conflict_do_update(
-                    index_elements=cls.get_unique_fields(),
-                    set_=cls.get_on_conflict_params(q=q)
-                )
-                q = q.returning(cls.get_model_class().id)
-                res = await session.execute(q, data.to_dict())
-                await session.commit()
-                return await cls.get_by_id(id=res.scalar())
+            q = upsert(cls.get_model_class())
+            q = q.on_conflict_do_update(
+                index_elements=cls.get_unique_fields(),
+                set_=cls.get_on_conflict_params(q=q)
+            )
+            q = q.returning(cls.get_model_class().id)
+            res = await session.execute(q, data.to_dict())
+            await session.commit()
+            return await cls.get_by_id(id=res.scalar())
 
     @classmethod
     async def upsert_many(cls, data: List[AppValidator], apply_none_values: bool = False) -> List[int]:
         async with DatabaseService.get().async_session() as session:
-            async with session.begin():
-                q = upsert(cls.get_model_class())
-                set_ = [item.to_dict(remove_keys=cls.get_unique_fields(), remove_none_values=not apply_none_values) for item in data]
-                q = q.on_conflict_do_update(
-                    index_elements=cls.get_unique_fields(),
-                    set_=cls.get_on_conflict_params(q=q),
-                )
-                q = q.returning(cls.get_model_class().id)
-                res = await session.execute(q, [item.to_dict(remove_none_values=not apply_none_values) for item in data])
-                await session.commit()
-                return res.scalars().all()
+            q = upsert(cls.get_model_class())
+            set_ = [item.to_dict(remove_keys=cls.get_unique_fields(), remove_none_values=not apply_none_values) for item in data]
+            q = q.on_conflict_do_update(
+                index_elements=cls.get_unique_fields(),
+                set_=cls.get_on_conflict_params(q=q),
+            )
+            q = q.returning(cls.get_model_class().id)
+            res = await session.execute(q, [item.to_dict(remove_none_values=not apply_none_values) for item in data])
+            await session.commit()
+            return res.scalars().all()
 
     async def save(self) -> Self:
         async with DatabaseService.get().async_session() as session:
-            async with session.begin():
-                session.add(self)
-                return self
+            session.add(self)
+            print(self)
+            return self

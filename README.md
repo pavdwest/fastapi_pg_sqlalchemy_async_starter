@@ -37,7 +37,7 @@ A dockerised starter stack containing the following components:
 
 7. Everything's running:
 
-    ```http://127.0.0.1:8000/docs```
+    [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 8. Run migrations with Alembic (if you want the Books model for testing/demo purposes):
 
@@ -65,13 +65,15 @@ See changes to ```services/backend/app/src/migrations/env.py```
 
 ## PGAdmin4
 
-You can access PGAdmin4 at ```http://127.0.0.1:5050```.
+You can access PGAdmin4 at [http://127.0.0.1:5050](http://127.0.0.1:5050).
 
 See the `pgadmin` service in the ```docker-componse.yml``` file for credentials.
 
 Once you've logged into PGAdmin add the db server using the details as per `db` service in the ```docker-componse.yml```. **_Tip: Host name/address is `db` (name of the service) by default._**
 
 ## Adding a New Model
+
+A note on conventions: https://stackoverflow.com/questions/4702728/relational-table-naming-convention/4703155#4703155
 
 1. Add folder to ```services/backend/app/src/modules```
 

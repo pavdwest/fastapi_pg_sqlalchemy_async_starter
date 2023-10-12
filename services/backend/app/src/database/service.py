@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+from contextlib import asynccontextmanager
 from functools import lru_cache
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
@@ -35,11 +36,34 @@ class DatabaseService:
             pool_size=50,
         )
 
-        self.async_session: AsyncSession = sessionmaker(
+        self._async_session: AsyncSession = sessionmaker(
             self.async_engine,
             expire_on_commit=False,
             class_=AsyncSession
         )
+
+    @asynccontextmanager
+    async def async_session(self) -> AsyncSession:
+        """Async Context Manager to create a session with a specific schema context that auto commits.
+
+        Args:
+            schema_name (str): Database Schema Name for use with e.g. 'SELECT * FROM {schema_name}.some_table'
+
+        Returns:
+            AsyncSession: Async Session with the schema context set.
+
+        Yields:
+            Iterator[AsyncSession]: _description_
+        """
+        session = self._async_session()
+        try:
+            yield session
+            await session.commit()
+        except:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
     @classmethod
     def create_db(cls):
@@ -56,6 +80,7 @@ class DatabaseService:
         else:
             logger.info(f"Database '{DATABASE_HOST}/{DATABASE_NAME}' already exists. Nothing to do.")
 
+    # TODO: Do properly online with alembic
     @classmethod
     def run_migrations(cls):
         os.system('alembic upgrade head')
