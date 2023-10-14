@@ -39,7 +39,7 @@ async def create_one(item: CreateClass) -> GetClass:
     try:
         res = await ModelClass(**item.__dict__).save()
         return GetClass.model_validate(res)
-    except IntegrityError as e:
+    except Exception as e:
         raise_known(e)
 
 
@@ -94,7 +94,7 @@ async def create_or_update_one(item: CreateClass) -> GetClass:
     try:
         res = await ModelClass.upsert(item=item)
         return GetClass.model_validate(res)
-    except IntegrityError as e:
+    except Exception as e:
         raise_known(e)
 
 
@@ -183,7 +183,7 @@ async def create_many(items: List[CreateClass]) -> Bulk:
             count=len(res),
             ids=res
         )
-    except IntegrityError as e:
+    except Exception as e:
         raise_known(e)
 
 
@@ -202,5 +202,5 @@ async def create_or_update_many(items: List[UpdateClass]) -> Bulk:
             count=len(res),
             ids=res
         )
-    except IntegrityError as e:
+    except Exception as e:
         raise_known(e)
