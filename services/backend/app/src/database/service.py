@@ -33,7 +33,7 @@ class DatabaseService:
             DATABASE_URL_ASYNC,
             future=True,
             echo=True,
-            pool_size=50,
+            # pool_size=50,
         )
 
         self._async_session: AsyncSession = sessionmaker(

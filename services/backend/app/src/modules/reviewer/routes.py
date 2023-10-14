@@ -2,7 +2,6 @@ from typing import List
 
 from fastapi import APIRouter, status, HTTPException
 from inflection import pluralize
-from sqlalchemy.exc import IntegrityError
 
 from src.versions import ApiVersion
 from src.database.exceptions import raise_known
