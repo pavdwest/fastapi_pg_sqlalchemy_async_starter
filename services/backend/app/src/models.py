@@ -4,9 +4,8 @@ from functools import lru_cache
 from typing import List, Optional
 from typing_extensions import Self
 from datetime import datetime
-from pkg_resources import require
 
-from sqlalchemy import BigInteger, Insert
+from sqlalchemy import BigInteger, Insert, text
 from sqlalchemy import select, delete, update, insert
 from sqlalchemy.dialects.postgresql import insert as upsert
 from sqlalchemy import func
@@ -114,6 +113,18 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             return [r for r in res.scalars()]
 
     @classmethod
+    async def popo_fetch_all(cls) -> List[Dict]:
+        """Gets all objects from the database as plain old python objects.
+
+        Returns:
+            List[Dict]: List of dicts composed of plain old python objects
+        """
+        async with DatabaseService.get().async_session() as session:
+            q = select(cls.get_model_class())
+            res = await session.execute(text(str(q)))
+            return [row._asdict() for row in res]
+
+    @classmethod
     async def delete_by_id(cls, id: int) -> int:
         async with DatabaseService.get().async_session() as session:
             q = delete(cls.get_model_class()).where(cls.get_model_class().id == id)
@@ -191,5 +202,4 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
     async def save(self) -> Self:
         async with DatabaseService.get().async_session() as session:
             session.add(self)
-            print(self)
             return self

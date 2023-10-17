@@ -53,7 +53,7 @@ class DatabaseService:
             AsyncSession: Async Session with the schema context set.
 
         Yields:
-            Iterator[AsyncSession]: _description_
+            Iterator[AsyncSession]: Async Session with the schema context set.
         """
         session = self._async_session()
         try:

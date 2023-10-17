@@ -165,7 +165,27 @@ async def delete_all() -> Bulk:
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def get_all() -> List[GetClass]:
-    return [GetClass.model_validate(item) for item in await Book.fetch_all()]
+    ## Prep test
+    # orms = []
+    # for i in range(100001, 500000):
+    #     orms.append(
+    #         CreateClass(
+    #             name=f"Book {i}",
+    #             author=f"Author {i}",
+    #             identifier=f"ISBN-{i}",
+    #             release_year=2000 + i
+    #         )
+    #     )
+    # res = await ModelClass.create_many(items=orms)
+
+    # return [GetClass.model_validate(item) for item in await Book.fetch_all()]
+    import time
+    s = time.monotonic()
+    # res = [GetClass.model_validate(item) for item in await Book.popo_fetch_all()] # 22.04586635499436
+    res = [GetClass.model_validate(item) for item in await Book.fetch_all()] # 9.310887769999681
+    print(time.monotonic() - s)
+    # return res[0:10]
+    return res
 
 
 @router.post(
