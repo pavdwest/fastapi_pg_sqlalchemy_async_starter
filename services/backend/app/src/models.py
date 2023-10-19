@@ -122,7 +122,8 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
         async with DatabaseService.get().async_session() as session:
             q = select(cls.get_model_class())
             res = await session.execute(text(str(q)))
-            return [row._asdict() for row in res]
+            # return [row for row in res]
+            return res
 
     @classmethod
     async def delete_by_id(cls, id: int) -> int:
