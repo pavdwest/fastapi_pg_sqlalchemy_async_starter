@@ -29,22 +29,24 @@ class DatabaseService:
 
     def __init__(self) -> None:
         __class__.create_db()
-        self.async_engine: AsyncEngine = create_async_engine(
+        self._async_engine: AsyncEngine = create_async_engine(
             DATABASE_URL_ASYNC,
             future=True,
             echo=True,
             # pool_size=50,
         )
 
-        self._async_session: AsyncSession = sessionmaker(
-            self.async_engine,
+        self._async_session_maker: AsyncSession = sessionmaker(
+            self._async_engine,
             expire_on_commit=False,
-            class_=AsyncSession
+            class_=AsyncSession,
         )
 
+    @classmethod
     @asynccontextmanager
-    async def async_session(self) -> AsyncSession:
+    async def async_session(cls) -> AsyncSession:
         """Async Context Manager to create a session with a specific schema context that auto commits.
+        Will lazy init db service if not already done.
 
         Args:
             schema_name (str): Database Schema Name for use with e.g. 'SELECT * FROM {schema_name}.some_table'
@@ -55,7 +57,9 @@ class DatabaseService:
         Yields:
             Iterator[AsyncSession]: Async Session with the schema context set.
         """
-        session = self._async_session()
+        session = cls.get()._async_session_maker()
+        # session.expire_on_commit = False
+
         try:
             yield session
             await session.commit()
@@ -91,6 +95,10 @@ class DatabaseService:
             logger.warning(f"Dropping database: {DATABASE_NAME}...")
             drop_database(url=DATABASE_URL_SYNC)
 
-    async def shutdown(self):
-        if self.async_engine is not None:
-            await self.async_engine.dispose()
+    @classmethod
+    async def shutdown(cls):
+        if cls._instance is not None:
+            if cls._instance._async_session_maker is not None:
+                await cls._instance._async_session_maker.close_all()
+            if cls._instance._async_engine is not None:
+                await cls._instance._async_engine.dispose()

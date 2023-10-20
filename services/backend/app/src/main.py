@@ -1,9 +1,9 @@
-from src.app import app
+from src.app import App
 from src.route_manager import register_routes
 from src.models import AppModel
 
 
-@app.on_event('startup')
+# Custom Startup & Shutdown Handlers
 async def startup():
     await AppModel.init_orm()
 
@@ -11,7 +11,13 @@ async def startup():
     register_routes(app=app)
 
 
-@app.on_event('shutdown')
-async def startup():
+async def shutdown():
     # await db.shutdown()
     pass
+
+
+# Create app instance
+app = App(
+    on_startup_handlers=[startup],
+    on_shutdown_handlers=[shutdown]
+).get()

@@ -164,7 +164,7 @@ async def delete_all() -> Bulk:
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def get_all() -> List[GetClass]:
-    return [GetClass.model_validate(item) for item in await Book.fetch_all()][0:10]
+    return [GetClass.model_validate(item) for item in await Book.read_all()]
 
 
 @router.post(
@@ -256,8 +256,8 @@ async def performance_test() -> Dict:
 
     # Raw fetch
     s = time.monotonic()
-    res = await Book.fetch_all()  # 10.190340717992513 for 1 mil, Calc: 0.4833592210052302
-    # res = await Book.popo_fetch_all() # 2.038523224997334 for 1 mil, Calc: 68.26654115399288
+    res = await Book.read_all()  # 10.190340717992513 for 1 mil, Calc: 0.4833592210052302
+    # res = await Book.popo_read_all() # 2.038523224997334 for 1 mil, Calc: 68.26654115399288
     print(f"Fetch: {time.monotonic() - s}")
 
     # Sum all release years

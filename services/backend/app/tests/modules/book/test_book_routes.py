@@ -471,7 +471,7 @@ async def test_get_all_full(client: AsyncClient):
     all_items_route.sort(key=lambda x: x['id'])
 
     # Get directly from db
-    all_items_db = await Book.fetch_all()
+    all_items_db = await Book.read_all()
     all_items_db.sort(key=lambda x: x.id)
 
     for i in range(len(all_items_route)):

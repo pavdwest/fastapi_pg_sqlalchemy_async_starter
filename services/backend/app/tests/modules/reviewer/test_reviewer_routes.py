@@ -425,7 +425,7 @@ async def test_get_all_full(client: AsyncClient):
     all_items_route.sort(key=lambda x: x['id'])
 
     # Get directly from db
-    all_items_db = await Reviewer.fetch_all()
+    all_items_db = await Reviewer.read_all()
     all_items_db.sort(key=lambda x: x.id)
 
     # assert all_items_route == all_items_db

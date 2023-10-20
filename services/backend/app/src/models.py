@@ -27,7 +27,7 @@ class IdMixin:
 
     @classmethod
     async def get_by_id(cls, id: int) -> Self:
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
             return res.scalars().first()
@@ -46,7 +46,7 @@ class IdentifierMixin:
 
     @classmethod
     async def get_by_identifier(cls, identifier: str) -> Self:
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().identifier == identifier)
             res = await session.execute(q)
             return res.scalars().first()
@@ -92,7 +92,8 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
 
     @classmethod
     async def init_orm(cls):
-        async with DatabaseService.get().async_engine.begin() as conn:
+        # async with DatabaseService.get().async_engine.begin() as conn:
+        async with DatabaseService.async_session() as conn:
             # logger.warning("Creating tables...")
             # await conn.run_sync(cls.metaitem.drop_all)
             # await conn.run_sync(cls.metaitem.create_all)
@@ -100,26 +101,26 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
 
     @classmethod
     async def get_count(cls) -> int:
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             q = select(func.count(cls.get_model_class().id))
             res = await session.execute(q)
             return res.scalar()
 
     @classmethod
-    async def fetch_all(cls) -> List[Self]:
-        async with DatabaseService.get().async_session() as session:
+    async def read_all(cls) -> List[Self]:
+        async with DatabaseService.async_session() as session:
             q = select(cls.get_model_class())
             res = await session.execute(q)
             return [r for r in res.scalars()]
 
     @classmethod
-    async def popo_fetch_all(cls) -> List[Dict]:
+    async def popo_read_all(cls) -> List[Dict]:
         """Gets all objects from the database as plain old python objects.
 
         Returns:
             List[Dict]: List of dicts composed of plain old python objects
         """
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             q = select(cls.get_model_class())
             res = await session.execute(text(str(q)))
             # return [row for row in res]
@@ -127,15 +128,15 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
 
     @classmethod
     async def delete_by_id(cls, id: int) -> int:
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             q = delete(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
-            await session.commit()
+            # await session.commit()
             return id
 
     @classmethod
     async def delete_all(cls) -> List[int]:
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             q = delete(cls.get_model_class()).returning(cls.get_model_class().id)
             res = await session.execute(q)
             await session.commit()
@@ -143,7 +144,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
 
     @classmethod
     async def update_by_id(cls, id: int, item: AppValidator, apply_none_values: bool = False) -> Self:
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             q = update(cls.get_model_class())
             res = await session.execute(
                 q,
@@ -159,7 +160,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
 
     @classmethod
     async def create_many(cls, items: List[AppValidator]) -> List[int]:
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             q = insert(cls.get_model_class()).returning(cls.get_model_class().id)
             res = await session.execute(q, [d.to_dict() for d in items])
             await session.commit()
@@ -176,7 +177,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
 
     @classmethod
     async def upsert(cls, item: AppValidator, apply_none_values: bool = False) -> Self:
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             q = upsert(cls.get_model_class())
             q = q.on_conflict_do_update(
                 index_elements=cls.get_unique_fields(),
@@ -189,7 +190,7 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
 
     @classmethod
     async def upsert_many(cls, items: List[AppValidator], apply_none_values: bool = False) -> List[int]:
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             q = upsert(cls.get_model_class())
             q = q.on_conflict_do_update(
                 index_elements=cls.get_unique_fields(),
@@ -201,6 +202,6 @@ class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
             return res.scalars().all()
 
     async def save(self) -> Self:
-        async with DatabaseService.get().async_session() as session:
+        async with DatabaseService.async_session() as session:
             session.add(self)
             return self

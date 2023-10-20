@@ -164,7 +164,7 @@ async def delete_all() -> Bulk:
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def get_all() -> List[GetClass]:
-    return [GetClass.model_validate(item) for item in await Reviewer.fetch_all()]
+    return [GetClass.model_validate(item) for item in await Reviewer.read_all()]
 
 
 @router.post(
