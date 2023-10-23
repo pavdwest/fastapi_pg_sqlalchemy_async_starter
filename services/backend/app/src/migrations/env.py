@@ -10,7 +10,7 @@ from alembic import context
 from src.config import DATABASE_URL_ASYNC
 from src.models import AppModel
 from src.modules.book.models import Book
-from src.modules.reviewer.models import Reviewer
+from src.modules.critic.models import Critic
 
 
 # this is the Alembic Config object, which provides

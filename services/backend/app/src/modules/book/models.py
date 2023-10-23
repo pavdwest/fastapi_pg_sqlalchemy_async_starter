@@ -1,4 +1,5 @@
 from typing import Optional
+from typing_extensions import Self
 
 from sqlalchemy.orm import Mapped, mapped_column
 

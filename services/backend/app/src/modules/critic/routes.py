@@ -5,20 +5,20 @@ from inflection import pluralize
 
 from src.versions import ApiVersion
 from src.database.exceptions import raise_known
-from src.modules.reviewer.models import Reviewer
+from src.modules.critic.models import Critic
 from src.validators import Bulk
-from src.modules.reviewer.validators import (
-    ReviewerCreate,
-    ReviewerGet,
-    ReviewerUpdate,
-    ReviewerUpdateWithId
+from src.modules.critic.validators import (
+    CriticCreate,
+    CriticGet,
+    CriticUpdate,
+    CriticUpdateWithId
 )
 
 
-ModelClass = Reviewer
-CreateClass = ReviewerCreate
-GetClass = ReviewerGet
-UpdateClass = ReviewerUpdate
+ModelClass = Critic
+CreateClass = CriticCreate
+GetClass = CriticGet
+UpdateClass = CriticUpdate
 
 
 router = APIRouter(
@@ -69,7 +69,7 @@ async def update_one(id: int, item: UpdateClass) -> GetClass:
     summary=f"Update a specific {ModelClass.__name__} stored in the database (`id` included in the payload).",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def update_one_with_id(item: ReviewerUpdateWithId) -> GetClass:
+async def update_one_with_id(item: CriticUpdateWithId) -> GetClass:
     db_item = await ModelClass.get_by_id(id=item.id)
 
     if db_item is None:
@@ -164,7 +164,7 @@ async def delete_all() -> Bulk:
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def get_all() -> List[GetClass]:
-    return [GetClass.model_validate(item) for item in await Reviewer.read_all()]
+    return [GetClass.model_validate(item) for item in await Critic.read_all()]
 
 
 @router.post(

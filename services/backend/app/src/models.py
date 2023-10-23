@@ -33,12 +33,16 @@ class IdMixin:
             return res.scalars().first()
 
 
-class TimestampsMixin:
+class AuditTimestampsMixin:
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         default=datetime.utcnow,
         onupdate=datetime.utcnow
     )
+
+
+class TimestampMixin:
+    timestamp: Mapped[datetime] = mapped_column()
 
 
 class IdentifierMixin:
@@ -60,7 +64,7 @@ class DescriptionMixin:
     name: Mapped[Optional[str]] = mapped_column(nullable=True)
 
 
-class AppModel(DeclarativeBase, IdMixin, TimestampsMixin):
+class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
     @declared_attr
     @lru_cache(maxsize=1)
     def __tablename__(cls):
