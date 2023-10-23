@@ -9,14 +9,13 @@ from alembic import context
 
 from src.config import DATABASE_URL_ASYNC
 from src.models import AppModel
-from src.modules.book.models import Book
-from src.modules.critic.models import Critic
+from src.models_helper import *
 
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", DATABASE_URL_ASYNC)
+config.set_main_option('sqlalchemy.url', DATABASE_URL_ASYNC)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

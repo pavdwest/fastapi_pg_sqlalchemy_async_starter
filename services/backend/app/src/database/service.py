@@ -74,6 +74,7 @@ class DatabaseService:
         if not database_exists(url=DATABASE_URL_SYNC):
             logger.warning(f"Creating database: {DATABASE_NAME}...")
             create_database(url=DATABASE_URL_SYNC)
+            logger.warning('Running migrations as database was just created...')
             cls.run_migrations()
 
             # TODO: Add some more detailed error handling if this borks

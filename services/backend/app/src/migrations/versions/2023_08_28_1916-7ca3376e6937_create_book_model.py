@@ -1,7 +1,7 @@
 """Create Book Model
 
 Revision ID: 7ca3376e6937
-Revises: 
+Revises:
 Create Date: 2023-08-28 19:16:34.727942
 
 """
@@ -27,7 +27,7 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.Column('identifier', sa.String(), nullable=False),
-    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('name', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('identifier')
     )
