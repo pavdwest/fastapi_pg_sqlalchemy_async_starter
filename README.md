@@ -1,13 +1,18 @@
 # Overview
 
-A dockerised starter stack containing the following components:
+An auto-initialised dockerised starter stack containing the following components (all on latest versions):
 
-* FastAPI backend
-* Postgres 15 database
-* SQLAlchemy ORM (Async)
-* Alembic Migrations
+* FastAPI backend with single & bulk CRUD endpoints
+* Postgres 16 database
+* SQLAlchemy 2.0+ ORM (Async)
+* Alembic Migrations (with auto-migrate on db create)
 * Pydantic Validations
-* TODO: Proper Pytest with DB
+* Pytests with new DB created for each run
+
+# Requirements
+
+* Docker
+* Git (optional but recommended)
 
 # Getting Started
 

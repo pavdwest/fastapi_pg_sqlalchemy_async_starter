@@ -9,7 +9,7 @@ from alembic import context
 
 from src.config import DATABASE_URL_ASYNC
 from src.models import AppModel
-from src.models_helper import *
+from src.models_includer import *   # This include all is intentional
 
 
 # this is the Alembic Config object, which provides
