@@ -9,9 +9,11 @@ An auto-initialised dockerised starter stack containing the following components
 * Pydantic Validations
 * Pytests with new DB created for each run
 
+Project homepage: [https://github.com/pavdwest/fastapi_pg_sqlalchemy_async_starter](https://github.com/pavdwest/fastapi_pg_sqlalchemy_async_starter)
+
 # Requirements
 
-* Docker
+* [Docker](https://www.docker.com/)
 * Git (optional but recommended)
 
 # Getting Started
@@ -24,27 +26,23 @@ An auto-initialised dockerised starter stack containing the following components
 
     ```cd fastapi_pg_sqlalchemy_async_starter```
 
-3. Create & activate virtual environment:
+3. (Optional) Create & activate virtual environment for local development:
 
     ```python -m venv services/backend/app/.ignore/venv && source services/backend/app/.ignore/venv/bin/activate```
 
-4. Install dependencies for local development/intellisense:
+4. (Optional) Install dependencies for local development/intellisense:
 
     ```pip install -r services/backend/app/requirements/base.txt```
 
-5. Add .env file:
-
-    ```cp services/backend/app/src/.env.example services/backend/app/src/.env```
-
-6. Run stack (we attach only to the backend as we don't want to listen to PGAdmin4 spam):
+5. Run stack (we attach only to the backend as we don't want to listen to PGAdmin4 spam):
 
     ```docker compose up --build --attach backend```
 
-7. Everything's running:
+6. Everything's running:
 
     [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
-8. Run migrations with Alembic (if you want the Books model for testing/demo purposes):
+7. Run migrations with Alembic (if you want the Books model for testing/demo purposes):
 
      ```docker compose exec backend alembic upgrade head```
 

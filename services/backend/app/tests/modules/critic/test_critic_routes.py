@@ -7,8 +7,10 @@ from src.versions import ApiVersion
 from src.modules.critic.models import Critic
 
 
-model_class = Critic
-route_base = f"{ApiVersion.V1}/{model_class.__tablename__}"
+ModelClass = Critic
+route_base = f"{ApiVersion.V1}/{ModelClass.__tablename__}"
+get_model_member_count = 6
+bulk_response_member_count = 3
 
 
 @pytest.mark.anyio
@@ -33,6 +35,8 @@ async def test_create_one_with_all_fields(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['username'] == 'ultimate_worryer1983'
     assert data['bio'] == 'I like to read books and write reviews.'
     assert data['name'] == 'Booker DeDimwitte'
@@ -50,6 +54,8 @@ async def test_create_one_with_only_mandatory_fields(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['username'] == 'ultimate_worryer1984'
     assert data['created_at'] is not None
     assert data['updated_at'] is not None
@@ -75,6 +81,8 @@ async def test_update_one_with_all_fields(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['username'] == 'ultimate_worryer1986'
     assert data['bio'] == 'I like to read books and write reviews for a living.'
     assert data['name'] == 'Booker DeDimwittesun'
@@ -103,6 +111,8 @@ async def test_update_one_does_not_apply_none(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['username'] == 'ultimate_worryer1977'
     assert data['bio'] == 'I like big books and I cannot lie'
     assert data['name'] == ''
@@ -128,6 +138,8 @@ async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['username'] == 'ultimate_worryer1988'
     assert data['bio'] == 'I like to read books and write reviews'
     assert data['name'] == 'Booker DeDimwitte'
@@ -157,6 +169,8 @@ async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['username'] == 'ultimate_worryer1990'
     assert data['bio'] == 'I like to read books and write reviews for a living'
     assert data['name'] == 'Booker DeDimwittebrood'
@@ -183,6 +197,8 @@ async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncCli
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['username'] == 'ultimate_worryer1992'
     assert data['bio'] == 'I like to read books and write reviews'
     assert data['name'] == 'Booker DeDimwitte'
@@ -206,8 +222,10 @@ async def test_delete_one(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    assert data['message'] == f'Deleted one Critic from the database.'
+    assert len(data) == bulk_response_member_count
     assert data['count'] == 1
+    assert data['message'] == f'Deleted one Critic from the database.'
+    assert data['ids'] == [item.id]
     assert (await Critic.get_count()) == (item_count - 1)
 
 
@@ -236,8 +254,9 @@ async def test_create_bulk(client: AsyncClient):
     # Assert response
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    assert data['message'] == f'Created multiple Critics in the database.'
+    assert len(data) == bulk_response_member_count
     assert data['count'] == 2
+    assert data['message'] == f'Created multiple Critics in the database.'
     assert (await Critic.get_count()) == (item_count + 2)
 
     # Assert values
@@ -258,11 +277,15 @@ async def test_create_bulk(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_create_if_not_exists(client: AsyncClient):
+    username = 'ultimate_worryer1996'
+    db_item = await ModelClass.get_by_username(username)
+    assert db_item is None
+
     # Create items
     response = await client.put(
         route_base,
         json={
-                'username': 'ultimate_worryer1996',
+                'username': username,
                 'bio': 'I like to read books and write reviews',
                 'name': 'Booker DeDimwitte',
         }
@@ -271,7 +294,9 @@ async def test_create_if_not_exists(client: AsyncClient):
     # Assert response
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    assert data['username'] == 'ultimate_worryer1996'
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
+    assert data['username'] == username
     assert data['bio'] == 'I like to read books and write reviews'
     assert data['name'] == 'Booker DeDimwitte'
     assert data['created_at'] is not None
@@ -281,7 +306,7 @@ async def test_create_if_not_exists(client: AsyncClient):
 @pytest.mark.anyio
 async def test_update_if_exists(client: AsyncClient):
     # Create item
-    item = await Critic(
+    item = await ModelClass(
         **{
             'username': 'ultimate_worryer1997',
             'bio': 'I like to read books and write reviews',
@@ -302,6 +327,8 @@ async def test_update_if_exists(client: AsyncClient):
     # Assert response
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] == item.id
     assert data['username'] == 'ultimate_worryer1997'
     assert data['bio'] == 'I like to read books and write reviews for a living dead'
     assert data['name'] == 'Booker DeDimwittebroodmes'
@@ -312,7 +339,7 @@ async def test_update_if_exists(client: AsyncClient):
 @pytest.mark.anyio
 async def test_create_or_update_bulk(client: AsyncClient):
     # Get count before
-    item_count = await Critic.get_count()
+    item_count = await ModelClass.get_count()
 
     # Create items
     response = await client.put(
@@ -334,26 +361,28 @@ async def test_create_or_update_bulk(client: AsyncClient):
     # Assert response
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    assert data['message'] == f'Created or updated multiple Critics in the database.'
+    assert len(data) == bulk_response_member_count
     assert data['count'] == 2
-    assert (await Critic.get_count()) == (item_count + 2)
+    assert data['message'] == f'Created or updated multiple Critics in the database.'
+    assert len(data['ids']) == 2
+    assert (await ModelClass.get_count()) == (item_count + 2)
 
     # Assert values
-    item1 = await Critic.get_by_id(id=data['ids'][0])
+    item1 = await ModelClass.get_by_id(id=data['ids'][0])
     assert item1.username == 'ultimate_worryer1998'
     assert item1.bio == 'I like to read books and write reviews'
     assert item1.name == 'Booker DeDimwitte'
     assert item1.created_at is not None
     assert item1.updated_at is not None
 
-    item2 = await Critic.get_by_id(id=data['ids'][1])
+    item2 = await ModelClass.get_by_id(id=data['ids'][1])
     assert item2.username == 'ultimate_worryer1999'
     assert item2.bio is None
     assert item2.name is None
     assert item2.created_at is not None
     assert item2.updated_at is not None
 
-    item_count_pre_update = await Critic.get_count()
+    item_count_pre_update = await ModelClass.get_count()
 
     # Update items
     response = await client.put(
@@ -375,12 +404,14 @@ async def test_create_or_update_bulk(client: AsyncClient):
     # Assert response
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    assert data['message'] == f'Created or updated multiple Critics in the database.'
+    assert len(data) == bulk_response_member_count
     assert data['count'] == 2
-    assert (await Critic.get_count()) == item_count_pre_update
+    assert data['message'] == f'Created or updated multiple Critics in the database.'
+    assert len(data['ids']) == 2
+    assert (await ModelClass.get_count()) == item_count_pre_update
 
     # Assert values
-    item3 = await Critic.get_by_id(id=data['ids'][0])
+    item3 = await ModelClass.get_by_id(id=data['ids'][0])
     assert item3.id == item1.id
     assert item3.username == 'ultimate_worryer1998'
     assert item3.bio == 'I like to read books and write reviews in sql'
@@ -388,7 +419,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert item3.created_at is not None
     assert item3.updated_at is not None
 
-    item4 = await Critic.get_by_id(id=data['ids'][1])
+    item4 = await ModelClass.get_by_id(id=data['ids'][1])
     assert item4.id == item2.id
     assert item4.username == 'ultimate_worryer1999'
     assert item4.bio is None

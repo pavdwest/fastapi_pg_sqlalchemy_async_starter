@@ -7,8 +7,10 @@ from src.versions import ApiVersion
 from src.modules.book.models import Book
 
 
-model_class = Book
-route_base = f"{ApiVersion.V1}/{model_class.__tablename__}"
+ModelClass = Book
+route_base = f"{ApiVersion.V1}/{ModelClass.__tablename__}"
+get_model_member_count = 7
+bulk_response_member_count = 3
 
 
 @pytest.mark.anyio
@@ -34,6 +36,8 @@ async def test_create_one_with_all_fields(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['identifier'] == '978-3-16-148410-0'
     assert data['name'] == 'A Brief Horror Story of Time'
     assert data['author'] == 'Stephen Hawk King'
@@ -54,6 +58,8 @@ async def test_create_one_with_only_mandatory_fields(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['identifier'] == '978-3-16-148410-1'
     assert data['name'] == 'A Brief Horror Story of Time Part Deux'
     assert data['author'] == 'Stephen Hawk King'
@@ -84,6 +90,8 @@ async def test_update_one_with_all_fields(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['identifier'] == '978-3-16-148410-3'
     assert data['name'] == 'A Brief Horror Story of Time Part 3'
     assert data['author'] == 'Stephen Hawk Kingfisher'
@@ -114,6 +122,8 @@ async def test_update_one_does_not_apply_none(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['identifier'] == '978-3-16-148410-89'
     assert data['name'] == ''
     assert data['author'] == 'Stephen Hawk Kingpin'
@@ -143,6 +153,8 @@ async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['identifier'] == '978-3-16-148410-5'
     assert data['name'] == 'A Brief Horror Story of Time Part 4'
     assert data['author'] == 'Stephen Hawk Kingfisher'
@@ -175,6 +187,8 @@ async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['identifier'] == '978-3-16-148410-9'
     assert data['name'] == 'A Brief Horror Story of Time: Payload Time'
     assert data['author'] == 'Stephen Hawk Kingsmen Secret Service'
@@ -205,6 +219,8 @@ async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncCli
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
     assert data['identifier'] == '978-3-16-148410-11'
     assert data['name'] == 'A Brief Horror Story of Time Part Eleventy'
     assert data['author'] == 'Stephen Hawk Kingklip'
@@ -230,8 +246,10 @@ async def test_delete_one(client: AsyncClient):
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    assert data['message'] == f'Deleted one Book from the database.'
+    assert len(data) == bulk_response_member_count
     assert data['count'] == 1
+    assert data['message'] == f'Deleted one Book from the database.'
+    assert data['ids'] == [item.id]
     assert (await Book.get_count()) == (item_count - 1)
 
 
@@ -263,8 +281,10 @@ async def test_create_bulk(client: AsyncClient):
     # Assert response
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    assert data['message'] == f'Created multiple Books in the database.'
+    assert len(data) == bulk_response_member_count
     assert data['count'] == 2
+    assert data['message'] == f'Created multiple Books in the database.'
+    assert len(data['ids']) == 2
     assert (await Book.get_count()) == (item_count + 2)
 
     # Assert values
@@ -287,11 +307,15 @@ async def test_create_bulk(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_create_if_not_exists(client: AsyncClient):
+    identifier = '978-3-16-148410-19'
+    db_item = await ModelClass.get_by_identifier(identifier)
+    assert db_item is None
+
     # Create items
     response = await client.put(
         route_base,
         json={
-                'identifier': '978-3-16-148410-19',
+                'identifier': identifier,
                 'name': 'A Brief Horror Story of Time 19',
                 'author': 'Stephen Hawk Kingpinwheel',
                 'release_year': 2022,
@@ -301,7 +325,9 @@ async def test_create_if_not_exists(client: AsyncClient):
     # Assert response
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    assert data['identifier'] == '978-3-16-148410-19'
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
+    assert data['identifier'] == identifier
     assert data['name'] == 'A Brief Horror Story of Time 19'
     assert data['author'] == 'Stephen Hawk Kingpinwheel'
     assert data['release_year'] == 2022
@@ -312,7 +338,7 @@ async def test_create_if_not_exists(client: AsyncClient):
 @pytest.mark.anyio
 async def test_update_if_exists(client: AsyncClient):
     # Create item
-    item = await Book(
+    item = await ModelClass(
         **{
             'identifier': '978-3-16-148410-21',
             'name': 'A Brief Horror Story of Time 20',
@@ -335,6 +361,8 @@ async def test_update_if_exists(client: AsyncClient):
     # Assert response
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] == item.id
     assert data['identifier'] == '978-3-16-148410-21'
     assert data['name'] == 'A Brief Horror Story of Time 21'
     assert data['author'] == 'Stephen Hawk Kingmakers Mark'
@@ -346,7 +374,7 @@ async def test_update_if_exists(client: AsyncClient):
 @pytest.mark.anyio
 async def test_create_or_update_bulk(client: AsyncClient):
     # Get count before
-    item_count = await Book.get_count()
+    item_count = await ModelClass.get_count()
 
     # Create items
     response = await client.put(
@@ -373,10 +401,10 @@ async def test_create_or_update_bulk(client: AsyncClient):
     data = response.json()
     assert data['message'] == f'Created or updated multiple Books in the database.'
     assert data['count'] == 2
-    assert (await Book.get_count()) == (item_count + 2)
+    assert (await ModelClass.get_count()) == (item_count + 2)
 
     # Assert values
-    item1 = await Book.get_by_id(id=data['ids'][0])
+    item1 = await ModelClass.get_by_id(id=data['ids'][0])
     assert item1.identifier == '978-3-16-148410-35'
     assert item1.name == 'A Brief Horror Story of Time 31'
     assert item1.author == 'Stephen Hawk Kingstongue'
@@ -384,7 +412,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert item1.created_at is not None
     assert item1.updated_at is not None
 
-    item2 = await Book.get_by_id(id=data['ids'][1])
+    item2 = await ModelClass.get_by_id(id=data['ids'][1])
     assert item2.identifier == '978-3-16-148410-36'
     assert item2.name == 'A Brief Horror Story of Time 35'
     assert item2.author == 'Stephen Hawk Kingstonic'
@@ -392,7 +420,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert item2.created_at is not None
     assert item2.updated_at is not None
 
-    item_count_pre_update = await Book.get_count()
+    item_count_pre_update = await ModelClass.get_count()
 
     # Update items
     response = await client.put(
@@ -419,10 +447,10 @@ async def test_create_or_update_bulk(client: AsyncClient):
     data = response.json()
     assert data['message'] == f'Created or updated multiple Books in the database.'
     assert data['count'] == 2
-    assert (await Book.get_count()) == item_count_pre_update
+    assert (await ModelClass.get_count()) == item_count_pre_update
 
     # Assert values
-    item3 = await Book.get_by_id(id=data['ids'][0])
+    item3 = await ModelClass.get_by_id(id=data['ids'][0])
     assert item3.id == item1.id
     assert item3.identifier == '978-3-16-148410-35'
     assert item3.name == 'A Brief Horror Story of Time 35'
@@ -431,7 +459,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert item3.created_at is not None
     assert item3.updated_at is not None
 
-    item4 = await Book.get_by_id(id=data['ids'][1])
+    item4 = await ModelClass.get_by_id(id=data['ids'][1])
     assert item4.id == item2.id
     assert item4.identifier == '978-3-16-148410-36'
     assert item4.name == 'A Brief Horror Story of Time 36'
