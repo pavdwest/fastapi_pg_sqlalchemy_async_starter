@@ -1,11 +1,11 @@
 from __future__ import annotations
 from ast import Dict
 from functools import lru_cache
-from typing import List, Optional
+from typing import Any, List, Optional
 from typing_extensions import Self
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Insert, text
+from sqlalchemy import BigInteger, Insert, column, text, UniqueConstraint
 from sqlalchemy import select, delete, update, insert
 from sqlalchemy.dialects.postgresql import insert as upsert
 from sqlalchemy import func
@@ -16,10 +16,20 @@ from sqlalchemy.orm import (
     mapped_column,
 )
 from sqlalchemy_utils import get_class_by_table
-from inflection import titleize, pluralize, underscore
+from inflection import titleize, pluralize, underscore, camelize
 
 from src.database.service import DatabaseService
 from src.validators import AppValidator
+
+
+def generate_unique_constraint(model_name: str, column_names: List[str]):
+    # Given model name = 'Review', and column_names = ['critic_id', 'book_id'], produces 'uc_Review_CriticId_BookId'.
+    # Bizarre that we need to use camelize here, but titleize drops the 'id' and produces 'Critic' from 'critic_id'.
+    # camelize produces 'CriticId'.
+    return UniqueConstraint(
+        *column_names,
+        name=f"uc_{model_name}_{'_'.join([camelize(c) for c in column_names])}"
+    )
 
 
 class IdMixin:
@@ -69,6 +79,8 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
     @lru_cache(maxsize=1)
     def __tablename__(cls):
         return underscore(cls.__name__)
+
+
 
     @classmethod
     @lru_cache(maxsize=1)
