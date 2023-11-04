@@ -22,13 +22,21 @@ from src.database.service import DatabaseService
 from src.validators import AppValidator
 
 
-def generate_unique_constraint(model_name: str, column_names: List[str]):
-    # Given model name = 'Review', and column_names = ['critic_id', 'book_id'], produces 'uc_Review_CriticId_BookId'.
+@lru_cache()
+def generate_unique_constraint(
+    *field_names: Any,
+    model_name: Any = None,
+    name: str = None,
+):
+    # Given model name = 'Review', and field_names = ['critic_id', 'book_id'], produces 'uc_Review_CriticId_BookId'.
     # Bizarre that we need to use camelize here, but titleize drops the 'id' and produces 'Critic' from 'critic_id'.
     # camelize produces 'CriticId'.
+    if name is None:
+        name = f"uc_{model_name}_{'_'.join([camelize(c) for c in field_names])}"
+
     return UniqueConstraint(
-        *column_names,
-        name=f"uc_{model_name}_{'_'.join([camelize(c) for c in column_names])}"
+        *field_names,
+        name=name,
     )
 
 

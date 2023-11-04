@@ -1,3 +1,4 @@
+from pyexpat import model
 from typing import Optional
 from typing_extensions import Self
 
@@ -18,10 +19,8 @@ class Review(AppModel):
 
     __table_args__ = (
         generate_unique_constraint(
+            'critic_id',
+            'book_id',
             model_name='Review',
-            column_names=[
-                'critic_id',
-                'book_id',
-            ]
         ),
     )
