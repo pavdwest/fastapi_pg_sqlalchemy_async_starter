@@ -87,8 +87,6 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
     def __tablename__(cls):
         return underscore(cls.__name__)
 
-
-
     @classmethod
     @lru_cache(maxsize=1)
     def get_model_class(cls):
@@ -129,12 +127,26 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
             res = await session.execute(q)
             return res.scalar()
 
+    # TODO: Add metadata to the response
     @classmethod
-    async def read_all(cls) -> List[Self]:
+    async def read_all(
+        cls,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> List[Self]:
         async with DatabaseService.async_session() as session:
-            q = select(cls.get_model_class())
+            q = select(cls.get_model_class()).offset(0).limit(limit)
             res = await session.execute(q)
-            return [r for r in res.scalars()]
+            all = res.scalars().all()
+            # return {
+            #     'meta': {
+            #         "offset": offset,
+            #         "limit": limit,
+            #         "total": len(all)
+            #     },
+            #     'data': all
+            # }
+            return all
 
     @classmethod
     async def popo_read_all(cls) -> List[Dict]:
