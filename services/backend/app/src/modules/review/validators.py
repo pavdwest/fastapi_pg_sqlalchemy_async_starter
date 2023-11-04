@@ -14,19 +14,22 @@ class ReviewBase(AppValidator):
     body:      str = Field(examples=['This book was great!', 'This book was terrible!'])
 
 
-class ReviewCreate(ReviewBase):
-    model_config = ConfigDict(
-        from_attributes=True,
-        json_schema_extra={
-            'example': {
-                'title': 'Review: With a View',
-                'critic_id': 1,
-                'book_id': 27,
-                'rating': 4,
-                'body': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit book book good.'
-            }
+model_config_base = ConfigDict(
+    from_attributes=True,
+    json_schema_extra={
+        'example': {
+            'title': 'Review: With a View',
+            'critic_id': 1,
+            'book_id': 27,
+            'rating': 4,
+            'body': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit book book good.'
         }
-    )
+    }
+)
+
+
+class ReviewCreate(ReviewBase):
+    model_config = model_config_base
 
 
 class ReviewGet(ReviewBase):
@@ -57,6 +60,8 @@ class ReviewUpdate(AppValidator):
     book_id:   Optional[int] = Field(examples=[1, 27])
     rating:    Optional[int] = Field(examples=[1, 5], ge=1, le=5)
     body:      Optional[str] = Field(examples=['This book was great!', 'This book was terrible!'])
+
+    model_config = model_config_base
 
 
 class ReviewUpdateWithId(ReviewUpdate):

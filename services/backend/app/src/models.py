@@ -138,13 +138,14 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
             q = select(cls.get_model_class()).offset(0).limit(limit)
             res = await session.execute(q)
             all = res.scalars().all()
+            meta = {
+                "offset": offset,
+                "limit": limit,
+                "total": len(all)
+            }
             # return {
-            #     'meta': {
-            #         "offset": offset,
-            #         "limit": limit,
-            #         "total": len(all)
-            #     },
-            #     'data': all
+            #     'meta': meta,
+            #     'data': all,
             # }
             return all
 
