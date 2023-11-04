@@ -10,7 +10,7 @@ class ReviewBase(AppValidator):
     title:     str = Field(examples=['Review: With a View', 'A Review to Admire'])
     critic_id: int = Field(examples=[1, 27])
     book_id:   int = Field(examples=[1, 27])
-    rating:    int = Field(examples=[1, 5], min=1, max=5)
+    rating:    int = Field(examples=[1, 5], ge=1, le=5)
     body:      str = Field(examples=['This book was great!', 'This book was terrible!'])
 
 
@@ -55,7 +55,7 @@ class ReviewUpdate(AppValidator):
     title:     Optional[str] = Field(examples=['Review: With a View', 'A Review to Admire'])
     critic_id: Optional[int] = Field(examples=[1, 27])
     book_id:   Optional[int] = Field(examples=[1, 27])
-    rating:    Optional[int] = Field(examples=[1, 5], min=1, max=5)
+    rating:    Optional[int] = Field(examples=[1, 5], ge=1, le=5)
     body:      Optional[str] = Field(examples=['This book was great!', 'This book was terrible!'])
 
 
