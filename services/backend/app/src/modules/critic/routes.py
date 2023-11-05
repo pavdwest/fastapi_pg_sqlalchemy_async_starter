@@ -4,7 +4,7 @@ from fastapi import APIRouter, status, HTTPException
 from inflection import pluralize
 
 from src.versions import ApiVersion
-from src.database.exceptions import raise_known
+from src.database.exceptions import handle_exception
 from src.modules.critic.models import Critic
 from src.validators import Bulk
 from src.modules.critic.validators import (
@@ -39,7 +39,7 @@ async def create_one(item: CreateClass) -> GetClass:
         res = await ModelClass(**item.__dict__).save()
         return GetClass.model_validate(res)
     except Exception as e:
-        raise_known(e)
+        handle_exception(e)
 
 
 @router.patch(
@@ -94,7 +94,7 @@ async def upsert_one(item: CreateClass) -> GetClass:
         res = await ModelClass.upsert(item=item)
         return GetClass.model_validate(res)
     except Exception as e:
-        raise_known(e)
+        handle_exception(e)
 
 
 @router.delete(
@@ -183,7 +183,7 @@ async def create_many(items: List[CreateClass]) -> Bulk:
             ids=res
         )
     except Exception as e:
-        raise_known(e)
+        handle_exception(e)
 
 
 @router.put(
@@ -202,4 +202,4 @@ async def upsert_many(items: List[UpdateClass]) -> Bulk:
             ids=res
         )
     except Exception as e:
-        raise_known(e)
+        handle_exception(e)
