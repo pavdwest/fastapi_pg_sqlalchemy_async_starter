@@ -51,7 +51,7 @@ async def create_one(item: CreateClass) -> GetClass:
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def update_one(id: int, item: UpdateClass) -> GetClass:
-    db_item = await ModelClass.get_by_id(id=id)
+    db_item = await ModelClass.read_by_id(id=id)
 
     if db_item is None:
         raise HTTPException(
@@ -71,7 +71,7 @@ async def update_one(id: int, item: UpdateClass) -> GetClass:
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def update_one_with_id(item: BookUpdateWithId) -> GetClass:
-    db_item = await ModelClass.get_by_id(id=item.id)
+    db_item = await ModelClass.read_by_id(id=item.id)
 
     if db_item is None:
         raise HTTPException(
@@ -90,7 +90,7 @@ async def update_one_with_id(item: BookUpdateWithId) -> GetClass:
     summary=f"Create or update one {ModelClass.__name__} in the database.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def create_or_update_one(item: CreateClass) -> GetClass:
+async def upsert_one(item: CreateClass) -> GetClass:
     try:
         res = await ModelClass.upsert(item=item)
         return GetClass.model_validate(res)
@@ -106,7 +106,7 @@ async def create_or_update_one(item: CreateClass) -> GetClass:
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def delete_one(id: int) -> Bulk:
-    db_item = await ModelClass.get_by_id(id=id)
+    db_item = await ModelClass.read_by_id(id=id)
 
     if db_item is None:
         raise HTTPException(
@@ -129,8 +129,8 @@ async def delete_one(id: int) -> Bulk:
     summary=f"Get a {ModelClass.__name__} stored in the database by its ID.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def get_by_id(id: int) -> GetClass:
-    item = await ModelClass.get_by_id(id=id)
+async def read_by_id(id: int) -> GetClass:
+    item = await ModelClass.read_by_id(id=id)
 
     if item is None:
         raise HTTPException(
@@ -164,7 +164,7 @@ async def delete_all() -> Bulk:
     summary=f"Get all {pluralize(ModelClass.__name__)} stored in the database.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def get_all(
+async def read_all(
     offset: int = 0,
     limit: int = READ_ALL_LIMIT_DEFAULT
 ) -> List[GetClass]:
@@ -198,7 +198,7 @@ async def create_many(items: List[CreateClass]) -> Bulk:
     summary=f"Create or update many {pluralize(ModelClass.__name__)} in the database.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def create_or_update_many(items: List[UpdateClass]) -> Bulk:
+async def upsert_many(items: List[UpdateClass]) -> Bulk:
     try:
         res = await ModelClass.upsert_many(items=items, apply_none_values=False)
         return Bulk(

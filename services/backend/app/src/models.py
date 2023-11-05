@@ -43,7 +43,7 @@ class IdMixin:
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
     @classmethod
-    async def get_by_id(cls, id: int) -> Self:
+    async def read_by_id(cls, id: int) -> Self:
         async with DatabaseService.async_session() as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
@@ -66,7 +66,7 @@ class IdentifierMixin:
     identifier: Mapped[str] = mapped_column(unique=True)
 
     @classmethod
-    async def get_by_identifier(cls, identifier: str) -> Self:
+    async def read_by_identifier(cls, identifier: str) -> Self:
         async with DatabaseService.async_session() as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().identifier == identifier)
             res = await session.execute(q)
@@ -201,7 +201,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
                 ]
             )
             await session.commit()
-            return await cls.get_by_id(id=id)
+            return await cls.read_by_id(id=id)
 
     @classmethod
     async def create_many(cls, items: List[AppValidator]) -> List[int]:
@@ -231,7 +231,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
             q = q.returning(cls.get_model_class().id)
             res = await session.execute(q, item.to_dict())
             await session.commit()
-            return await cls.get_by_id(id=res.scalar())
+            return await cls.read_by_id(id=res.scalar())
 
     @classmethod
     async def upsert_many(cls, items: List[AppValidator], apply_none_values: bool = False) -> List[int]:

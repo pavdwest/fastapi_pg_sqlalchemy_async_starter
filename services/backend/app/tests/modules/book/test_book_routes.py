@@ -14,7 +14,7 @@ bulk_response_member_count = 3
 
 
 @pytest.mark.anyio
-async def test_get_all_empty(client: AsyncClient):
+async def test_read_all_empty(client: AsyncClient):
     response = await client.get(
         route_base
     )
@@ -288,7 +288,7 @@ async def test_create_bulk(client: AsyncClient):
     assert (await Book.get_count()) == (item_count + 2)
 
     # Assert values
-    item1 = await Book.get_by_id(id=data['ids'][0])
+    item1 = await Book.read_by_id(id=data['ids'][0])
     assert item1.identifier == '978-3-16-148410-15'
     assert item1.name == 'A Brief Horror Story of Time 15'
     assert item1.author == 'Stephen Hawk Kingston'
@@ -296,7 +296,7 @@ async def test_create_bulk(client: AsyncClient):
     assert item1.created_at is not None
     assert item1.updated_at is not None
 
-    item2 = await Book.get_by_id(id=data['ids'][1])
+    item2 = await Book.read_by_id(id=data['ids'][1])
     assert item2.identifier == '978-3-16-148410-16'
     assert item2.name == 'A Brief Horror Story of Time 16'
     assert item2.author == 'Stephen Hawk Kingston Jamaica'
@@ -308,7 +308,7 @@ async def test_create_bulk(client: AsyncClient):
 @pytest.mark.anyio
 async def test_create_if_not_exists(client: AsyncClient):
     identifier = '978-3-16-148410-19'
-    db_item = await ModelClass.get_by_identifier(identifier)
+    db_item = await ModelClass.read_by_identifier(identifier)
     assert db_item is None
 
     # Create items
@@ -372,7 +372,7 @@ async def test_update_if_exists(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_create_or_update_bulk(client: AsyncClient):
+async def test_upsert_bulk(client: AsyncClient):
     # Get count before
     item_count = await ModelClass.get_count()
 
@@ -404,7 +404,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert (await ModelClass.get_count()) == (item_count + 2)
 
     # Assert values
-    item1 = await ModelClass.get_by_id(id=data['ids'][0])
+    item1 = await ModelClass.read_by_id(id=data['ids'][0])
     assert item1.identifier == '978-3-16-148410-35'
     assert item1.name == 'A Brief Horror Story of Time 31'
     assert item1.author == 'Stephen Hawk Kingstongue'
@@ -412,7 +412,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert item1.created_at is not None
     assert item1.updated_at is not None
 
-    item2 = await ModelClass.get_by_id(id=data['ids'][1])
+    item2 = await ModelClass.read_by_id(id=data['ids'][1])
     assert item2.identifier == '978-3-16-148410-36'
     assert item2.name == 'A Brief Horror Story of Time 35'
     assert item2.author == 'Stephen Hawk Kingstonic'
@@ -450,7 +450,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert (await ModelClass.get_count()) == item_count_pre_update
 
     # Assert values
-    item3 = await ModelClass.get_by_id(id=data['ids'][0])
+    item3 = await ModelClass.read_by_id(id=data['ids'][0])
     assert item3.id == item1.id
     assert item3.identifier == '978-3-16-148410-35'
     assert item3.name == 'A Brief Horror Story of Time 35'
@@ -459,7 +459,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert item3.created_at is not None
     assert item3.updated_at is not None
 
-    item4 = await ModelClass.get_by_id(id=data['ids'][1])
+    item4 = await ModelClass.read_by_id(id=data['ids'][1])
     assert item4.id == item2.id
     assert item4.identifier == '978-3-16-148410-36'
     assert item4.name == 'A Brief Horror Story of Time 36'
@@ -470,7 +470,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_get_all_full(client: AsyncClient):
+async def test_read_all_full(client: AsyncClient):
     # Create two items
     item_second_last = await Book(
         **{
