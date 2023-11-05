@@ -1,6 +1,7 @@
 from __future__ import annotations
 from functools import lru_cache
-from typing import Any, Dict, List, Optional
+from re import L
+from typing import Any, Dict, List, Optional, Type
 from typing_extensions import Self
 from datetime import datetime
 
@@ -84,29 +85,53 @@ class DescriptionMixin:
 class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
     @declared_attr
     @lru_cache(maxsize=1)
-    def __tablename__(cls):
+    def __tablename__(cls) -> str:
+        """Get name of the table this model is mapped to.
+        Essentially, just underscore the class name.
+        This can be used in raw queries.
+
+        Returns:
+            str: Name of the table this model is mapped to.
+        """
         return underscore(cls.__name__)
 
     @classmethod
     @lru_cache(maxsize=1)
-    def get_model_class(cls):
+    def get_model_class(cls) -> Type[AppModel]:
+        """Gets a reference to the model class we're currently in
+
+        Returns:
+            Type[AppModel]: Class reference derived from AppModel
+        """
         return get_class_by_table(cls, cls.__table__)
 
     @declared_attr
     @lru_cache(maxsize=1)
     def __tablename_friendly__(cls):
+        """Get a human-readable tablename. Essentially, just pluralize and titleize the __tablename__.
+
+        Returns:
+            _type_: _description_
+        """
         return pluralize(titleize(cls.__tablename__))
 
     @classmethod
     @lru_cache(maxsize=1)
-    def get_unique_fields(cls):
+    def get_unique_fieldnames(cls) -> List[str]:
         return [
             c.name for c in cls.get_model_class().__table__.columns if c.unique
         ]
 
     @classmethod
     @lru_cache(maxsize=1)
-    def get_settable_fields(cls):
+    def get_settable_fieldnames(cls) -> List[str]:
+        """Get a list of fieldnames that can be set by the user.
+        This excludes fields such as id, created_at, updated_at, etc.
+
+        Returns:
+            List[str]: List of fieldnames controlled by the user.
+        """
+        # TODO: use a mixin property
         return [
             c.name for c in cls.get_model_class().__table__.columns if c.name not in ['id', 'created_at', 'updated_at']
         ]
@@ -214,10 +239,23 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
     @classmethod
     @lru_cache(maxsize=1)
     def get_on_conflict_fields(cls) -> List[str]:
-        return [f for f in cls.get_settable_fields() if f not in cls.get_unique_fields()]
+        """Gets a list of fieldnames that should be used in the ON CONFLICT clause of an upsert query.
+
+        Returns:
+            List[str]: List of fieldnames to update during upsert.
+        """
+        return [f for f in cls.get_settable_fieldnames() if f not in cls.get_unique_fieldnames()]
 
     @classmethod
     def get_on_conflict_params(cls, q: Insert) -> Dict:
+        """Injections for the ON CONFLICT clause of an upsert query.
+
+        Args:
+            q (Insert): the working insert statement
+
+        Returns:
+            Dict: A dict with the on_conflict params injected
+        """
         return { f: q.excluded[f] for f in cls.get_on_conflict_fields() }
 
     @classmethod
@@ -225,7 +263,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
         async with DatabaseService.async_session() as session:
             q = upsert(cls.get_model_class())
             q = q.on_conflict_do_update(
-                index_elements=cls.get_unique_fields(),
+                index_elements=cls.get_unique_fieldnames(),
                 set_=cls.get_on_conflict_params(q=q)
             )
             q = q.returning(cls.get_model_class().id)
@@ -238,7 +276,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
         async with DatabaseService.async_session() as session:
             q = upsert(cls.get_model_class())
             q = q.on_conflict_do_update(
-                index_elements=cls.get_unique_fields(),
+                index_elements=cls.get_unique_fieldnames(),
                 set_=cls.get_on_conflict_params(q=q),
             )
             q = q.returning(cls.get_model_class().id)
