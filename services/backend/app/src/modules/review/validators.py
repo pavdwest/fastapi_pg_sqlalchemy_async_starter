@@ -1,8 +1,9 @@
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from pydantic import ConfigDict, Field
 
+from src.utils import some_datetime, some_earlier_datetime
 from src.validators import AppValidator
 
 
@@ -34,8 +35,8 @@ class ReviewCreate(ReviewBase):
 
 class ReviewGet(ReviewBase):
     id:         int      = Field(examples=[127, 667])
-    created_at: datetime = Field(title='Created At', description='UTC Timestamp of record creation', examples=[datetime.now() - timedelta(days=1, hours=2, minutes=3, seconds=4)])
-    updated_at: datetime = Field(title='Updated At', description='The last time this record was updated (UTC)', examples=[datetime.now()])
+    created_at: datetime = Field(title='Created At', description='UTC Timestamp of record creation', examples=[some_earlier_datetime, some_datetime])
+    updated_at: datetime = Field(title='Updated At', description='The last time this record was updated (UTC)', examples=[some_earlier_datetime, some_datetime])
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -47,8 +48,8 @@ class ReviewGet(ReviewBase):
                 'book_id': 27,
                 'rating': 4,
                 'body': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit book book good.',
-                'created_at': datetime.utcnow() - timedelta(days=1, hours=2, minutes=3, seconds=4),
-                'udpated_at': datetime.utcnow(),
+                'created_at': some_earlier_datetime,
+                'udpated_at': some_datetime,
             }
         }
     )
