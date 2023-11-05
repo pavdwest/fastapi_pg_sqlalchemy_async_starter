@@ -131,11 +131,20 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
     @classmethod
     async def read_all(
         cls,
-        offset: int = 0,
-        limit: int = 100,
+        offset: int = None,
+        limit: int = None,
     ) -> List[Self]:
         async with DatabaseService.async_session() as session:
+            # Base query
             q = select(cls.get_model_class()).offset(0).limit(limit)
+
+            # Apply offset and limit
+            if offset is not None:
+                q = q.offset(offset)
+
+            if limit is not None:
+                q = q.limit(limit)
+
             res = await session.execute(q)
             all = res.scalars().all()
             meta = {

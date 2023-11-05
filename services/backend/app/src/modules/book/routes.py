@@ -3,6 +3,7 @@ from typing import List, Dict
 from fastapi import APIRouter, status, HTTPException
 from inflection import pluralize
 
+from src.config import READ_ALL_LIMIT_DEFAULT, READ_ALL_LIMIT_MAX
 from src.versions import ApiVersion
 from src.database.exceptions import raise_known
 from src.modules.book.models import Book
@@ -163,8 +164,12 @@ async def delete_all() -> Bulk:
     summary=f"Get all {pluralize(ModelClass.__name__)} stored in the database.",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def get_all() -> List[GetClass]:
-    return [GetClass.model_validate(item) for item in await Book.read_all()]
+async def get_all(
+    offset: int = 0,
+    limit: int = READ_ALL_LIMIT_DEFAULT
+) -> List[GetClass]:
+    limit = min(limit, READ_ALL_LIMIT_MAX)
+    return [GetClass.model_validate(item) for item in await Book.read_all(offset=offset, limit=limit)]
 
 
 @router.post(
