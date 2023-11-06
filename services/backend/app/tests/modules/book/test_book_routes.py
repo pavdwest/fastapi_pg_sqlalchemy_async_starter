@@ -399,8 +399,10 @@ async def test_create_or_update_bulk(client: AsyncClient):
     # Assert response
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    assert data['message'] == f'Created or updated multiple Books in the database.'
+    assert len(data) == bulk_response_member_count
     assert data['count'] == 2
+    assert data['message'] == f'Created or updated multiple Books in the database.'
+    assert len(data['ids']) == 2
     assert (await ModelClass.get_count()) == (item_count + 2)
 
     # Assert values
@@ -445,8 +447,10 @@ async def test_create_or_update_bulk(client: AsyncClient):
     # Assert response
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
-    assert data['message'] == f'Created or updated multiple Books in the database.'
+    assert len(data) == bulk_response_member_count
     assert data['count'] == 2
+    assert data['message'] == f'Created or updated multiple Books in the database.'
+    assert len(data['ids']) == 2
     assert (await ModelClass.get_count()) == item_count_pre_update
 
     # Assert values
