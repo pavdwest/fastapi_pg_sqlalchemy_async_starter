@@ -6,7 +6,7 @@ from httpx import AsyncClient
 @pytest.mark.anyio
 async def test_home(client: AsyncClient):
     response = await client.get(
-        '/api/v1/home'
+        '/'
     )
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()

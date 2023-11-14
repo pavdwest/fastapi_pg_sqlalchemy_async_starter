@@ -7,12 +7,11 @@ from src.versions import ApiVersion
 
 router = APIRouter(
     tags=['Home'],
-    prefix=f"{ApiVersion.V1}/home",
 )
 
 
 @router.get(
-    '',
+    '/',
     response_model=Dict,
     status_code=status.HTTP_200_OK,
     summary='Returns 200 if service is up and running',
