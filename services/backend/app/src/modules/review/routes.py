@@ -233,7 +233,6 @@ async def seed_data(n: int = 100000) -> Dict:
             )
         )
         if len(orms) == batch_size or i == n - 1:
-            # res = await ModelClass.create_many(items=orms)
             tasks.append(ModelClass.create_many(items=orms))
             orms = []
 
