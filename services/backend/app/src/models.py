@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import lru_cache
 from re import L
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Tuple
 from typing_extensions import Self
 from datetime import datetime
 
@@ -137,6 +137,14 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
         ]
 
     @classmethod
+    @lru_cache(maxsize=1)
+    def get_field_types(cls, fields: Tuple[str, ...]) -> Dict[str, Any]:
+        field_types = {}
+        for field in fields:
+            field_types[field] = getattr(cls.get_model_class(), field).type.python_type
+        return field_types
+
+    @classmethod
     async def init_orm(cls):
         # async with DatabaseService.get().async_engine.begin() as conn:
         async with DatabaseService.async_session() as conn:
@@ -144,6 +152,25 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
             # await conn.run_sync(cls.metaitem.drop_all)
             # await conn.run_sync(cls.metaitem.create_all)
             pass
+
+    @classmethod
+    async def seed(cls, count: int = 100):
+        for i in range(count):
+            await cls.seed_instance(idx=i).save()
+
+    @classmethod
+    async def seed_instance(cls, idx: int) -> Self:
+        payload = {}
+        settable_field_types = cls.get_field_types(fields=tuple(cls.get_settable_fieldnames()))
+        for f in settable_field_types:
+            if settable_field_types[f] == str:
+                payload[f] = f"{f} {idx}"
+            elif settable_field_types[f] == int:
+                payload[f] = idx
+            elif settable_field_types[f] == datetime:
+                payload[f] = datetime.utcnow()
+
+        return cls.get_model_class()(**payload)
 
     @classmethod
     async def get_count(cls) -> int:
@@ -288,3 +315,6 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
         async with DatabaseService.async_session() as session:
             session.add(self)
             return self
+
+    def to_dict(self) -> Dict:
+        return self.__dict__

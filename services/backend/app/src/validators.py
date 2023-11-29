@@ -15,7 +15,7 @@ class AppValidator(BaseModel):
         return { k: v for k, v in d.items() if v is not None or not remove_none_values }
 
 
-class GetValidator(AppValidator):
+class ReadValidator(AppValidator):
     pass
 
 

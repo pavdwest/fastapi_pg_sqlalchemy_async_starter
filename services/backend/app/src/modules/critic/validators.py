@@ -6,7 +6,7 @@ from pydantic import ConfigDict, Field, BaseModel
 from src.utils import some_datetime, some_earlier_datetime
 from src.validators import (
     AppValidator,
-    GetValidator,
+    ReadValidator,
     CreateValidator,
     UpdateValidator,
     UpdateWithIdValidator,
@@ -35,7 +35,7 @@ class CriticCreate(CreateValidator, CriticBase):
     model_config = model_config_base
 
 
-class CriticGet(GetValidator, CriticBase):
+class CriticGet(ReadValidator, CriticBase):
     id:         int      = Field(examples=[127, 667])
     created_at: datetime = Field(title='Created At', description='UTC Timestamp of record creation', examples=[some_earlier_datetime, some_datetime])
     updated_at: datetime = Field(title='Updated At', description='The last time this record was updated (UTC)', examples=[some_earlier_datetime, some_datetime])

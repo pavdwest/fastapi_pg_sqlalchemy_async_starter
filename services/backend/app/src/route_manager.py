@@ -8,6 +8,6 @@ from src.modules.review.routes import router as review_router
 
 def register_routes(app: FastAPI):
     app.include_router(home_router)
-    app.include_router(book_router)
-    app.include_router(critic_router)
-    app.include_router(review_router)
+    app.include_router(book_router.router)
+    app.include_router(critic_router.router)
+    app.include_router(review_router.router)
