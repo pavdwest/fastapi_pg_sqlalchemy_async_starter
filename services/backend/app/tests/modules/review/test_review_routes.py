@@ -189,26 +189,29 @@ async def test_update_one_does_not_apply_none(client: AsyncClient):
 
 # @pytest.mark.anyio
 # async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
-#     item = await Review(
-#         **{
-#             'username': 'ultimate_worryer1987',
-#             'bio': 'I like to read books and write reviews',
-#             'name': 'Booker DeDimwitte',
-#         }
-#     ).save()
+#     book = await new_book()
+#     critic = await new_critic()
+#     item = await new_item()
+
 #     response = await client.patch(
 #         f"{route_base}/{item.id}",
 #         json={
-#             'username': 'ultimate_worryer1988',
+#             'title': f"Critic {critic.id}'s review of Book {book.id} title",
+#             'critic_id': critic.id,
+#             'book_id': book.id,
+#             'rating': 4,
+#             'body': f"Critic {critic.id}'s review of Book {book.id} body",
 #         }
 #     )
+
 #     assert response.status_code == status.HTTP_200_OK, response.text
 #     data = response.json()
 #     assert len(data) == get_model_member_count
-#     assert data['id'] > 0
-#     assert data['username'] == 'ultimate_worryer1988'
-#     assert data['bio'] == 'I like to read books and write reviews'
-#     assert data['name'] == 'Booker DeDimwitte'
+#     assert data['title'] == f"Critic {critic.id}'s review of Book {book.id} title"
+#     assert data['critic_id'] == critic.id
+#     assert data['book_id'] == book.id
+#     assert data['rating'] == 4
+#     assert data['body'] == f"Critic {critic.id}'s review of Book {book.id} body"
 #     assert datetime.fromisoformat(data['created_at']) == item.created_at
 #     assert datetime.fromisoformat(data['updated_at']) > item.updated_at
 #     assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])

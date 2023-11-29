@@ -16,10 +16,11 @@ from src.modules.book.validators import (
 )
 
 
-ModelClass = Book
-CreateClass = BookCreate
-GetClass = BookGet
-UpdateClass = BookUpdate
+ModelClass                 = Book
+CreateClass                = BookCreate
+GetClass                   = BookGet
+UpdateClass                = BookUpdate
+UpdateWithIdClass = BookUpdateWithId
 
 
 router = APIRouter(
@@ -70,7 +71,7 @@ async def update_one(id: int, item: UpdateClass) -> GetClass:
     summary=f"Update a specific {ModelClass.__name__} stored in the database (`id` included in the payload).",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def update_one_with_id(item: BookUpdateWithId) -> GetClass:
+async def update_one_with_id(item: UpdateWithIdClass) -> GetClass:
     db_item = await ModelClass.read_by_id(id=item.id)
 
     if db_item is None:
@@ -137,6 +138,12 @@ async def read_by_id(id: int) -> GetClass:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Object with id={id} not found."
         )
+
+    from src.routes import generate_route_class
+    k = generate_route_class('TestGenClass')
+    a = k()
+    a.test()
+    print(k)
 
     return GetClass.model_validate(item.__dict__)
 

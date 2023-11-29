@@ -15,10 +15,11 @@ from src.modules.critic.validators import (
 )
 
 
-ModelClass = Critic
-CreateClass = CriticCreate
-GetClass = CriticGet
-UpdateClass = CriticUpdate
+ModelClass                 = Critic
+CreateClass                = CriticCreate
+GetClass                   = CriticGet
+UpdateClass                = CriticUpdate
+UpdateWithIdClass = CriticUpdateWithId
 
 
 router = APIRouter(
@@ -69,7 +70,7 @@ async def update_one(id: int, item: UpdateClass) -> GetClass:
     summary=f"Update a specific {ModelClass.__name__} stored in the database (`id` included in the payload).",
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def update_one_with_id(item: CriticUpdateWithId) -> GetClass:
+async def update_one_with_id(item: UpdateWithIdClass) -> GetClass:
     db_item = await ModelClass.read_by_id(id=item.id)
 
     if db_item is None:

@@ -165,6 +165,62 @@ async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
 
 
 @pytest.mark.anyio
+async def test_update_one_with_only_optional_fields(client: AsyncClient):
+    item = await Book(
+        **{
+            'identifier': '978-3-16-148410-64',
+            'name': 'A Brief Horror Story of Time Part 6Four',
+            'author': 'Stephen Hawk Kingpin',
+            'release_year': 2046,
+        }
+    ).save()
+    response = await client.patch(
+        f"/api/v1/book/{item.id}",
+        json={
+            'release_year': 2047,
+        }
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
+    assert data['identifier'] == '978-3-16-148410-64'
+    assert data['name'] == 'A Brief Horror Story of Time Part 6Four'
+    assert data['author'] == 'Stephen Hawk Kingpin'
+    assert data['release_year'] == 2047
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) > item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+
+
+@pytest.mark.anyio
+async def test_update_one_with_no_fields(client: AsyncClient):
+    item = await Book(
+        **{
+            'identifier': '978-3-16-148410-664',
+            'name': 'A Brief Horror Story of Time Part 66Four',
+            'author': 'Stephen Hawk Kingpin6',
+            'release_year': 2046,
+        }
+    ).save()
+    response = await client.patch(
+        f"/api/v1/book/{item.id}",
+        json={}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
+    assert data['identifier'] == '978-3-16-148410-664'
+    assert data['name'] == 'A Brief Horror Story of Time Part 66Four'
+    assert data['author'] == 'Stephen Hawk Kingpin6'
+    assert data['release_year'] == 2046
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) == item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+
+
+@pytest.mark.anyio
 async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
     item = await Book(
         **{

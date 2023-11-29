@@ -10,11 +10,25 @@ class AppValidator(BaseModel):
     ) -> Dict:
         d = self.__dict__
         if remove_keys is not None:
-            d = {k: v for k, v in d.items() if k not in remove_keys}
+            d = { k: v for k, v in d.items() if k not in remove_keys }
 
-        return {
-            k: v for k, v in d.items() if v is not None or not remove_none_values
-        }
+        return { k: v for k, v in d.items() if v is not None or not remove_none_values }
+
+
+class GetValidator(AppValidator):
+    pass
+
+
+class CreateValidator(AppValidator):
+    pass
+
+
+class UpdateValidator(AppValidator):
+    pass
+
+
+class UpdateWithIdValidator(AppValidator):
+    pass
 
 
 class Bulk(AppValidator):

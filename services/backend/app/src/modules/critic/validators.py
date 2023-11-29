@@ -1,13 +1,19 @@
 from typing import Optional
 from datetime import datetime
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, BaseModel
 
 from src.utils import some_datetime, some_earlier_datetime
-from src.validators import AppValidator
+from src.validators import (
+    AppValidator,
+    GetValidator,
+    CreateValidator,
+    UpdateValidator,
+    UpdateWithIdValidator,
+)
 
 
-class CriticBase(AppValidator):
+class CriticBase(BaseModel):
     username: str           = Field(examples=['bookborn1', 'ultimate_worryer1983'])
     bio:      Optional[str] = Field(examples=['I like to read books.', 'I like to read books and write reviews.'], default=None)
     name:     Optional[str] = Field(examples=['John McBookface', 'Booker DeDimwitte'], default=None)
@@ -25,11 +31,11 @@ model_config_base = ConfigDict(
 )
 
 
-class CriticCreate(CriticBase):
+class CriticCreate(CreateValidator, CriticBase):
     model_config = model_config_base
 
 
-class CriticGet(CriticBase):
+class CriticGet(GetValidator, CriticBase):
     id:         int      = Field(examples=[127, 667])
     created_at: datetime = Field(title='Created At', description='UTC Timestamp of record creation', examples=[some_earlier_datetime, some_datetime])
     updated_at: datetime = Field(title='Updated At', description='The last time this record was updated (UTC)', examples=[some_earlier_datetime, some_datetime])
@@ -49,7 +55,7 @@ class CriticGet(CriticBase):
     )
 
 
-class CriticUpdate(AppValidator):
+class CriticUpdateBase(BaseModel):
     username: Optional[str] = Field(examples=['bookborn1', 'ultimate_worryer1983'], default=None)
     bio:      Optional[str] = Field(examples=['I like to read books.', 'I like to read books and write reviews.'], default=None)
     name:     Optional[str] = Field(examples=['John McBookface', 'Booker DeDimwitte'], default=None)
@@ -57,5 +63,9 @@ class CriticUpdate(AppValidator):
     model_config = model_config_base
 
 
-class CriticUpdateWithId(CriticUpdate):
+class CriticUpdate(UpdateValidator, CriticUpdateBase):
+    pass
+
+
+class CriticUpdateWithId(UpdateWithIdValidator, CriticUpdateBase):
     id: int = Field(examples=[127, 667])

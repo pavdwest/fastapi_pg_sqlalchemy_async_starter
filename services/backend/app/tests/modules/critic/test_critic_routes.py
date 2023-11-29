@@ -149,6 +149,59 @@ async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
 
 
 @pytest.mark.anyio
+async def test_update_one_with_only_optional_fields(client: AsyncClient):
+    item = await Critic(
+        **{
+            'username': 'ultimate_worryer1987',
+            'bio': 'I like to read books and write reviews',
+            'name': 'Booker DeDimwitte',
+        }
+    ).save()
+    response = await client.patch(
+        f"{route_base}/{item.id}",
+        json={
+            'bio': 'I like to read books and write reviews2',
+            'name': 'Booker DeDimwitte2',
+        }
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
+    assert data['username'] == 'ultimate_worryer1987'
+    assert data['bio'] == 'I like to read books and write reviews2'
+    assert data['name'] == 'Booker DeDimwitte2'
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) > item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+
+
+@pytest.mark.anyio
+async def test_update_one_with_no_fields(client: AsyncClient):
+    item = await Critic(
+        **{
+            'username': 'ultimate_worryer19876',
+            'bio': 'I like to read books and write reviews6',
+            'name': 'Booker DeDimwitte6',
+        }
+    ).save()
+    response = await client.patch(
+        f"{route_base}/{item.id}",
+        json={}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
+    assert data['username'] == 'ultimate_worryer19876'
+    assert data['bio'] == 'I like to read books and write reviews6'
+    assert data['name'] == 'Booker DeDimwitte6'
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) == item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+
+
+@pytest.mark.anyio
 async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
     item = await Critic(
         **{

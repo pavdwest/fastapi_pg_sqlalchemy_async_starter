@@ -1,13 +1,19 @@
 from typing import Optional
 from datetime import datetime
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, BaseModel
 
 from src.utils import some_datetime, some_earlier_datetime
-from src.validators import AppValidator
+from src.validators import (
+    AppValidator,
+    GetValidator,
+    CreateValidator,
+    UpdateValidator,
+    UpdateWithIdValidator,
+)
 
 
-class ReviewBase(AppValidator):
+class ReviewBase(BaseModel):
     title:     str = Field(examples=['Review: With a View', 'A Review to Admire'])
     critic_id: int = Field(examples=[1, 27])
     book_id:   int = Field(examples=[1, 27])
@@ -29,11 +35,11 @@ model_config_base = ConfigDict(
 )
 
 
-class ReviewCreate(ReviewBase):
+class ReviewCreate(CreateValidator, ReviewBase):
     model_config = model_config_base
 
 
-class ReviewGet(ReviewBase):
+class ReviewGet(GetValidator, ReviewBase):
     id:         int      = Field(examples=[127, 667])
     created_at: datetime = Field(title='Created At', description='UTC Timestamp of record creation', examples=[some_earlier_datetime, some_datetime])
     updated_at: datetime = Field(title='Updated At', description='The last time this record was updated (UTC)', examples=[some_earlier_datetime, some_datetime])
@@ -55,7 +61,7 @@ class ReviewGet(ReviewBase):
     )
 
 
-class ReviewUpdate(AppValidator):
+class ReviewUpdateBase(BaseModel):
     title:     Optional[str] = Field(examples=['Review: With a View', 'A Review to Admire'])
     critic_id: Optional[int] = Field(examples=[1, 27])
     book_id:   Optional[int] = Field(examples=[1, 27])
@@ -65,5 +71,9 @@ class ReviewUpdate(AppValidator):
     model_config = model_config_base
 
 
-class ReviewUpdateWithId(ReviewUpdate):
+class ReviewUpdate(UpdateValidator, ReviewUpdateBase):
+    pass
+
+
+class ReviewUpdateWithId(UpdateWithIdValidator, ReviewUpdateBase):
     id:        int           = Field(examples=[1, 27])
