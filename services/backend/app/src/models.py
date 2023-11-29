@@ -18,6 +18,7 @@ from sqlalchemy.orm import (
 from sqlalchemy_utils import get_class_by_table
 from inflection import titleize, pluralize, underscore, camelize
 
+from src.utils import ToDictMixin
 from src.database.service import DatabaseService
 from src.validators import AppValidator
 
@@ -82,7 +83,7 @@ class DescriptionMixin:
     name: Mapped[Optional[str]] = mapped_column(nullable=True)
 
 
-class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
+class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
     @declared_attr
     @lru_cache(maxsize=1)
     def __tablename__(cls) -> str:
@@ -228,7 +229,6 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
         async with DatabaseService.async_session() as session:
             q = delete(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
-            # await session.commit()
             return id
 
     @classmethod
@@ -248,7 +248,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
                 [
                     {
                         'id': id,
-                        **item.to_dict(remove_none_values=not apply_none_values)
+                        **item.to_dict(keep_none_values=apply_none_values)
                     }
                 ]
             )
@@ -307,7 +307,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
                 set_=cls.get_on_conflict_params(q=q),
             )
             q = q.returning(cls.get_model_class().id)
-            res = await session.execute(q, [item.to_dict(remove_none_values=not apply_none_values) for item in items])
+            res = await session.execute(q, [item.to_dict(keep_none_values=apply_none_values) for item in items])
             await session.commit()
             return res.scalars().all()
 
@@ -315,6 +315,3 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
         async with DatabaseService.async_session() as session:
             session.add(self)
             return self
-
-    def to_dict(self) -> Dict:
-        return self.__dict__

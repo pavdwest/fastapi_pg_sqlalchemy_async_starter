@@ -34,6 +34,7 @@ def generate_route_class(
     UpdateValidatorClass: Type[UpdateValidator],
     UpdateWithIdValidatorClass: Type[UpdateWithIdValidator],
 ):
+    # Basic setup
     klass = type(f"{ModelClass.__name__}Routes", (object,), {})
     router = APIRouter(
         tags=[ModelClass.__tablename_friendly__],
@@ -42,6 +43,7 @@ def generate_route_class(
     klass.router = router
 
 
+    # Endpoints
     @router.post(
         '',
         response_model=ReadValidatorClass,
@@ -151,6 +153,8 @@ def generate_route_class(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Object with id={id} not found."
             )
+
+        print(item.to_dict())
 
         return ReadValidatorClass.model_validate(item.__dict__)
 
@@ -282,7 +286,7 @@ def generate_route_class(
         }
 
 
-    # Assign functions to class
+    # Link functions to class
     klass.create_one         = create_one
     klass.update_one         = update_one
     klass.update_one_with_id = update_one_with_id

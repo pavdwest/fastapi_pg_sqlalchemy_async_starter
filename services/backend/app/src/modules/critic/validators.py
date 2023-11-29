@@ -5,7 +5,6 @@ from pydantic import ConfigDict, Field, BaseModel
 
 from src.utils import some_datetime, some_earlier_datetime
 from src.validators import (
-    AppValidator,
     ReadValidator,
     CreateValidator,
     UpdateValidator,
