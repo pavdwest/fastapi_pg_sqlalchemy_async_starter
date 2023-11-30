@@ -370,199 +370,221 @@ async def test_create_if_not_exists(client: AsyncClient):
         }
     )
 
-    # # Assert response
-    # assert response.status_code == status.HTTP_200_OK, response.text
-    # data = response.json()
-    # assert len(data) == get_model_member_count
-    # assert data['id'] > 0
-    # assert data['title'] == f"Critic {critic.id}'s review of Book {book.id} title"
-    # assert data['critic_id'] == critic.id
-    # assert data['book_id'] == book.id
-    # assert data['rating'] == 4
-    # assert data['body'] == f"Critic {critic.id}'s review of Book {book.id} body"
-    # assert data['created_at'] is not None
-    # assert data['updated_at'] is not None
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
+    assert data['title'] == f"Critic {critic.id}'s review of Book {book.id} title"
+    assert data['critic_id'] == critic.id
+    assert data['book_id'] == book.id
+    assert data['rating'] == 4
+    assert data['body'] == f"Critic {critic.id}'s review of Book {book.id} body"
+    assert data['created_at'] is not None
+    assert data['updated_at'] is not None
 
 
-# @pytest.mark.anyio
-# async def test_update_if_exists(client: AsyncClient):
-#     # Create item
-#     item = await ModelClass(
-#         **{
-#             'username': 'ultimate_worryer1997',
-#             'bio': 'I like to read books and write reviews',
-#             'name': 'Booker DeDimwitte',
-#         }
-#     ).save()
+@pytest.mark.anyio
+async def test_update_if_exists(client: AsyncClient):
+    item = await new_item()
 
-#     # Update item
-#     response = await client.put(
-#         route_base,
-#         json={
-#                 'username': 'ultimate_worryer1997',
-#                 'bio': 'I like to read books and write reviews for a living dead',
-#                 'name': 'Booker DeDimwittebroodmes',
-#         }
-#     )
+    # Update item
+    response = await client.put(
+        route_base,
+        json={
+                'title': f"Critic {item.critic_id}'s review of Book {item.book_id} title UPDATE",
+                'critic_id': item.critic_id,
+                'book_id': item.book_id,
+                'rating': 5,
+                'body': f"Critic {item.critic_id}'s review of Book {item.book_id} body UPDATE",
+        }
+    )
 
-#     # Assert response
-#     assert response.status_code == status.HTTP_200_OK, response.text
-#     data = response.json()
-#     assert len(data) == get_model_member_count
-#     assert data['id'] == item.id
-#     assert data['username'] == 'ultimate_worryer1997'
-#     assert data['bio'] == 'I like to read books and write reviews for a living dead'
-#     assert data['name'] == 'Booker DeDimwittebroodmes'
-#     assert data['created_at'] is not None
-#     assert data['updated_at'] is not None
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] == item.id
+    assert data['title'] == f"Critic {item.critic_id}'s review of Book {item.book_id} title UPDATE"
+    assert data['critic_id'] == item.critic_id
+    assert data['book_id'] == item.book_id
+    assert data['rating'] == 5
+    assert data['body'] == f"Critic {item.critic_id}'s review of Book {item.book_id} body UPDATE"
+    assert data['created_at'] is not None
+    assert data['updated_at'] is not None
 
 
-# @pytest.mark.anyio
-# async def test_upsert_bulk(client: AsyncClient):
-#     # Get count before
-#     item_count = await ModelClass.get_count()
+@pytest.mark.anyio
+async def test_upsert_bulk(client: AsyncClient):
+    book1 = await new_book()
+    critic1 = await new_critic()
+    book2 = await new_book()
+    critic2 = await new_critic()
 
-#     # Create items
-#     response = await client.put(
-#         f"{route_base}/bulk",
-#         json=[
-#                 # With all fields
-#                 {
-#                     'username': 'ultimate_worryer1998',
-#                     'bio': 'I like to read books and write reviews',
-#                     'name': 'Booker DeDimwitte',
-#                 },
-#                 # With only mandatory fields
-#                 {
-#                     'username': 'ultimate_worryer1999',
-#                 }
-#         ]
-#     )
+    # Get count before
+    item_count = await ModelClass.get_count()
 
-#     # Assert response
-#     assert response.status_code == status.HTTP_200_OK, response.text
-#     data = response.json()
-#     assert len(data) == bulk_response_member_count
-#     assert data['count'] == 2
-#     assert data['message'] == f'Created or updated multiple Reviews in the database.'
-#     assert len(data['ids']) == 2
-#     assert (await ModelClass.get_count()) == (item_count + 2)
+    # Create items
+    response = await client.put(
+        f"{route_base}/bulk",
+        json=[
+                # With all fields
+                {
+                    'title': f"Critic {critic1.id}'s review of Book {book1.id} title",
+                    'critic_id': critic1.id,
+                    'book_id': book1.id,
+                    'rating': 3,
+                    'body': f"Critic {critic1.id}'s review of Book {book1.id} body",
+                },
+                # With only mandatory fields
+                {
+                    'title': f"Critic {critic2.id}'s review of Book {book2.id} title",
+                    'critic_id': critic2.id,
+                    'book_id': book2.id,
+                    'rating': 3,
+                    'body': f"Critic {critic2.id}'s review of Book {book2.id} body",
+                }
+        ]
+    )
 
-#     # Assert values
-#     item1 = await ModelClass.read_by_id(id=data['ids'][0])
-#     assert item1.username == 'ultimate_worryer1998'
-#     assert item1.bio == 'I like to read books and write reviews'
-#     assert item1.name == 'Booker DeDimwitte'
-#     assert item1.created_at is not None
-#     assert item1.updated_at is not None
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == bulk_response_member_count
+    assert data['count'] == 2
+    assert data['message'] == f'Created or updated multiple Reviews in the database.'
+    assert len(data['ids']) == 2
+    assert (await ModelClass.get_count()) == (item_count + 2)
 
-#     item2 = await ModelClass.read_by_id(id=data['ids'][1])
-#     assert item2.username == 'ultimate_worryer1999'
-#     assert item2.bio is None
-#     assert item2.name is None
-#     assert item2.created_at is not None
-#     assert item2.updated_at is not None
+    # Assert values
+    item1 = await ModelClass.read_by_id(id=data['ids'][0])
+    assert item1.id == item1.id
+    assert item1.title == f"Critic {item1.critic_id}'s review of Book {item1.book_id} title"
+    assert item1.critic_id == item1.critic_id
+    assert item1.book_id == item1.book_id
+    assert item1.rating == 3
+    assert item1.body == f"Critic {item1.critic_id}'s review of Book {item1.book_id} body"
+    assert item1.created_at is not None
+    assert item1.updated_at is not None
 
-#     item_count_pre_update = await ModelClass.get_count()
+    item2 = await ModelClass.read_by_id(id=data['ids'][1])
+    assert item2.id == item2.id
+    assert item2.title == f"Critic {item2.critic_id}'s review of Book {item2.book_id} title"
+    assert item2.critic_id == item2.critic_id
+    assert item2.book_id == item2.book_id
+    assert item2.rating == 3
+    assert item2.body == f"Critic {item2.critic_id}'s review of Book {item2.book_id} body"
+    assert item2.created_at is not None
+    assert item2.updated_at is not None
 
-#     # Update items
-#     response = await client.put(
-#         f"{route_base}/bulk",
-#         json=[
-#                 # With all fields
-#                 {
-#                     'username': 'ultimate_worryer1998',
-#                     'bio': 'I like to read books and write reviews in sql',
-#                     'name': 'Booker DeDimwitteveel',
-#                 },
-#                 # With only mandatory fields
-#                 {
-#                     'username': 'ultimate_worryer1999',
-#                 }
-#         ]
-#     )
+    item_count_pre_update = await ModelClass.get_count()
 
-#     # Assert response
-#     assert response.status_code == status.HTTP_200_OK, response.text
-#     data = response.json()
-#     assert len(data) == bulk_response_member_count
-#     assert data['count'] == 2
-#     assert data['message'] == f'Created or updated multiple Reviews in the database.'
-#     assert len(data['ids']) == 2
-#     assert (await ModelClass.get_count()) == item_count_pre_update
+    # Update items
+    book3 = await new_book()
+    critic3 = await new_critic()
+    book4 = await new_book()
+    critic4 = await new_critic()
 
-#     # Assert values
-#     item3 = await ModelClass.read_by_id(id=data['ids'][0])
-#     assert item3.id == item1.id
-#     assert item3.username == 'ultimate_worryer1998'
-#     assert item3.bio == 'I like to read books and write reviews in sql'
-#     assert item3.name == 'Booker DeDimwitteveel'
-#     assert item3.created_at is not None
-#     assert item3.updated_at is not None
+    response = await client.put(
+        f"{route_base}/bulk",
+        json=[
+                # With all fields
+                {
+                    'title': f"Critic {item1.critic_id}'s review of Book {item1.book_id} title UPDATE",
+                    'critic_id': item1.critic_id,
+                    'book_id': item1.book_id,
+                    'rating': 1,
+                    'body': f"Critic {item1.critic_id}'s review of Book {item1.book_id} body UPDATE",
+                },
+                # With only mandatory fields
+                {
+                    'title': f"Critic {item2.critic_id}'s review of Book {item2.book_id} title UPDATE",
+                    'critic_id': item2.critic_id,
+                    'book_id': item2.book_id,
+                    'rating': 1,
+                    'body': f"Critic {item2.critic_id}'s review of Book {item2.book_id} body UPDATE",
+                }
+        ]
+    )
 
-#     item4 = await ModelClass.read_by_id(id=data['ids'][1])
-#     assert item4.id == item2.id
-#     assert item4.username == 'ultimate_worryer1999'
-#     assert item4.bio is None
-#     assert item4.name is None
-#     assert item4.created_at is not None
-#     assert item4.updated_at is not None
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == bulk_response_member_count
+    assert data['count'] == 2
+    assert data['message'] == f'Created or updated multiple Reviews in the database.'
+    assert len(data['ids']) == 2
+    assert (await ModelClass.get_count()) == item_count_pre_update
+
+    # Assert values
+    item1db = await ModelClass.read_by_id(id=data['ids'][0])
+    assert item1db.id == item1.id
+    assert item1db.title == f"Critic {item1.critic_id}'s review of Book {item1.book_id} title UPDATE"
+    assert item1db.critic_id == item1.critic_id
+    assert item1db.book_id == item1.book_id
+    assert item1db.rating == 1
+    assert item1db.body == f"Critic {item1.critic_id}'s review of Book {item1.book_id} body UPDATE"
+    assert item1db.created_at is not None
+    assert item1db.updated_at is not None
+
+    item2db = await ModelClass.read_by_id(id=data['ids'][1])
+    assert item2db.id == item2.id
+    assert item2db.title == f"Critic {item2.critic_id}'s review of Book {item2.book_id} title UPDATE"
+    assert item2db.critic_id == item2.critic_id
+    assert item2db.book_id == item2.book_id
+    assert item2db.rating == 1
+    assert item2db.body == f"Critic {item2.critic_id}'s review of Book {item2.book_id} body UPDATE"
+    assert item2db.created_at is not None
+    assert item2db.updated_at is not None
 
 
-# @pytest.mark.anyio
-# async def test_read_all_full(client: AsyncClient):
-#     # Create two items
-#     item_second_last = await Review(
-#         **{
-#             'username': 'ultimate_worryer2003',
-#             'bio': 'I like to read books and write wrongs',
-#             'name': 'DeBooker DeDimwitte',
-#         }
-#     ).save()
+@pytest.mark.anyio
+async def test_read_all_full(client: AsyncClient):
+    # Create two items
+    item_second_last = await new_item()
+    item_last = await new_item()
 
-#     item_last = await Review(
-#         **{
-#             'username': 'ultimate_worryer2004',
-#             'bio': 'I like to write books and read wrongs',
-#             'name': 'DeBooker DeDimwittelemetry',
-#         }
-#     ).save()
+    # Get from route
+    response = await client.get(
+        route_base
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    all_items_route = response.json()
+    all_items_route.sort(key=lambda x: x['id'])
 
-#     # Get from route
-#     response = await client.get(
-#         route_base
-#     )
-#     assert response.status_code == status.HTTP_200_OK, response.text
-#     all_items_route = response.json()
-#     all_items_route.sort(key=lambda x: x['id'])
+    # Get directly from db
+    all_items_db = await Review.read_all()
+    all_items_db.sort(key=lambda x: x.id)
 
-#     # Get directly from db
-#     all_items_db = await Review.read_all()
-#     all_items_db.sort(key=lambda x: x.id)
+    # assert all_items_route == all_items_db
+    for i in range(len(all_items_route)):
+        assert all_items_route[i]['id'] == all_items_db[i].id
+        assert all_items_route[i]['title'] == all_items_db[i].title
+        assert all_items_route[i]['critic_id'] == all_items_db[i].critic_id
+        assert all_items_route[i]['book_id'] == all_items_db[i].book_id
+        assert all_items_route[i]['rating'] == all_items_db[i].rating
+        assert all_items_route[i]['body'] == all_items_db[i].body
+        assert all_items_route[i]['created_at'] == all_items_db[i].created_at.isoformat()
+        assert all_items_route[i]['updated_at'] == all_items_db[i].updated_at.isoformat()
 
-#     # assert all_items_route == all_items_db
-#     for i in range(len(all_items_route)):
-#         assert all_items_route[i]['id'] == all_items_db[i].id
-#         assert all_items_route[i]['username'] == all_items_db[i].username
-#         assert all_items_route[i]['bio'] == all_items_db[i].bio
-#         assert all_items_route[i]['name'] == all_items_db[i].name
-#         assert all_items_route[i]['created_at'] == all_items_db[i].created_at.isoformat()
-#         assert all_items_route[i]['updated_at'] == all_items_db[i].updated_at.isoformat()
+    # Verify the last two items retrieved from the route are the ones created at the start of the test
+    # Get second last item idx in all_items_route
+    second_last_idx = len(all_items_route) - 2
+    assert all_items_route[second_last_idx]['id'] == item_second_last.id
+    assert all_items_route[second_last_idx]['title'] == item_second_last.title
+    assert all_items_route[second_last_idx]['critic_id'] == item_second_last.critic_id
+    assert all_items_route[second_last_idx]['book_id'] == item_second_last.book_id
+    assert all_items_route[second_last_idx]['rating'] == item_second_last.rating
+    assert all_items_route[second_last_idx]['body'] == item_second_last.body
+    assert all_items_route[second_last_idx]['created_at'] == item_second_last.created_at.isoformat()
+    assert all_items_route[second_last_idx]['updated_at'] == item_second_last.updated_at.isoformat()
 
-#     # Verify the last two items retrieved from the route are the ones created at the start of the test
-#     # Get second last item idx in all_items_route
-#     second_last_idx = len(all_items_route) - 2
-#     assert all_items_route[second_last_idx]['id'] == item_second_last.id
-#     assert all_items_route[second_last_idx]['username'] == item_second_last.username
-#     assert all_items_route[second_last_idx]['bio'] == item_second_last.bio
-#     assert all_items_route[second_last_idx]['name'] == item_second_last.name
-#     assert all_items_route[second_last_idx]['created_at'] == item_second_last.created_at.isoformat()
-#     assert all_items_route[second_last_idx]['updated_at'] == item_second_last.updated_at.isoformat()
-
-#     last_idx = len(all_items_route) - 1
-#     assert all_items_route[last_idx]['id'] == item_last.id
-#     assert all_items_route[last_idx]['username'] == item_last.username
-#     assert all_items_route[last_idx]['bio'] == item_last.bio
-#     assert all_items_route[last_idx]['name'] == item_last.name
-#     assert all_items_route[last_idx]['created_at'] == item_last.created_at.isoformat()
-#     assert all_items_route[last_idx]['updated_at'] == item_last.updated_at.isoformat()
+    last_idx = len(all_items_route) - 1
+    assert all_items_route[last_idx]['id'] == item_last.id
+    assert all_items_route[last_idx]['title'] == item_last.title
+    assert all_items_route[last_idx]['critic_id'] == item_last.critic_id
+    assert all_items_route[last_idx]['book_id'] == item_last.book_id
+    assert all_items_route[last_idx]['rating'] == item_last.rating
+    assert all_items_route[last_idx]['body'] == item_last.body
+    assert all_items_route[last_idx]['created_at'] == item_last.created_at.isoformat()
+    assert all_items_route[last_idx]['updated_at'] == item_last.updated_at.isoformat()
