@@ -187,189 +187,201 @@ async def test_update_one_does_not_apply_none(client: AsyncClient):
     assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
 
 
-# @pytest.mark.anyio
-# async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
-#     book = await new_book()
-#     critic = await new_critic()
-#     item = await new_item()
+@pytest.mark.anyio
+async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
+    book = await new_book()
+    critic = await new_critic()
+    item = await new_item()
 
-#     response = await client.patch(
-#         f"{route_base}/{item.id}",
-#         json={
-#             'title': f"Critic {critic.id}'s review of Book {book.id} title",
-#             'critic_id': critic.id,
-#             'book_id': book.id,
-#             'rating': 4,
-#             'body': f"Critic {critic.id}'s review of Book {book.id} body",
-#         }
-#     )
+    response = await client.patch(
+        f"{route_base}/{item.id}",
+        json={
+            'title': f"Critic {critic.id}'s review of Book {book.id} title",
+            'critic_id': critic.id,
+            'book_id': book.id,
+            'rating': 4,
+            'body': f"Critic {critic.id}'s review of Book {book.id} body",
+        }
+    )
 
-#     assert response.status_code == status.HTTP_200_OK, response.text
-#     data = response.json()
-#     assert len(data) == get_model_member_count
-#     assert data['title'] == f"Critic {critic.id}'s review of Book {book.id} title"
-#     assert data['critic_id'] == critic.id
-#     assert data['book_id'] == book.id
-#     assert data['rating'] == 4
-#     assert data['body'] == f"Critic {critic.id}'s review of Book {book.id} body"
-#     assert datetime.fromisoformat(data['created_at']) == item.created_at
-#     assert datetime.fromisoformat(data['updated_at']) > item.updated_at
-#     assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
-
-
-# @pytest.mark.anyio
-# async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
-#     item = await Review(
-#         **{
-#             'username': 'ultimate_worryer1989',
-#             'bio': 'I like to read books and write reviews',
-#             'name': 'Booker DeDimwitte',
-#         }
-#     ).save()
-
-#     response = await client.patch(
-#         f"{route_base}/{item.id}",
-#         json={
-#             'id': item.id,
-#             'username': 'ultimate_worryer1990',
-#             'bio': 'I like to read books and write reviews for a living',
-#             'name': 'Booker DeDimwittebrood',
-#         }
-#     )
-#     assert response.status_code == status.HTTP_200_OK, response.text
-#     data = response.json()
-#     assert len(data) == get_model_member_count
-#     assert data['id'] > 0
-#     assert data['username'] == 'ultimate_worryer1990'
-#     assert data['bio'] == 'I like to read books and write reviews for a living'
-#     assert data['name'] == 'Booker DeDimwittebrood'
-#     assert datetime.fromisoformat(data['created_at']) == item.created_at
-#     assert datetime.fromisoformat(data['updated_at']) > item.updated_at
-#     assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['title'] == f"Critic {critic.id}'s review of Book {book.id} title"
+    assert data['critic_id'] == critic.id
+    assert data['book_id'] == book.id
+    assert data['rating'] == 4
+    assert data['body'] == f"Critic {critic.id}'s review of Book {book.id} body"
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) > item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
 
 
-# @pytest.mark.anyio
-# async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncClient):
-#     item = await Review(
-#         **{
-#             'username': 'ultimate_worryer1991',
-#             'bio': 'I like to read books and write reviews',
-#             'name': 'Booker DeDimwitte',
-#         }
-#     ).save()
-#     response = await client.patch(
-#         f"{route_base}/{item.id}",
-#         json={
-#             'id': item.id,
-#             'username': 'ultimate_worryer1992',
-#         }
-#     )
-#     assert response.status_code == status.HTTP_200_OK, response.text
-#     data = response.json()
-#     assert len(data) == get_model_member_count
-#     assert data['id'] > 0
-#     assert data['username'] == 'ultimate_worryer1992'
-#     assert data['bio'] == 'I like to read books and write reviews'
-#     assert data['name'] == 'Booker DeDimwitte'
-#     assert datetime.fromisoformat(data['created_at']) == item.created_at
-#     assert datetime.fromisoformat(data['updated_at']) > item.updated_at
-#     assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+@pytest.mark.anyio
+async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
+    book = await new_book()
+    critic = await new_critic()
+    item = await new_item()
+
+    response = await client.patch(
+        f"{route_base}/{item.id}",
+        json={
+            'title': f"Critic {critic.id}'s review of Book {book.id} title",
+            'critic_id': critic.id,
+            'book_id': book.id,
+            'rating': 4,
+            'body': f"Critic {critic.id}'s review of Book {book.id} body",
+        }
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['title'] == f"Critic {critic.id}'s review of Book {book.id} title"
+    assert data['critic_id'] == critic.id
+    assert data['book_id'] == book.id
+    assert data['rating'] == 4
+    assert data['body'] == f"Critic {critic.id}'s review of Book {book.id} body"
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) > item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
 
 
-# @pytest.mark.anyio
-# async def test_delete_one(client: AsyncClient):
-#     item = await Review(
-#         **{
-#             'username': 'ultimate_worryer1993',
-#             'bio': 'I like to read books and write reviews',
-#             'name': 'Booker DeDimwitte',
-#         }
-#     ).save()
-#     item_count = await Review.get_count()
-#     response = await client.delete(
-#         f"{route_base}/{item.id}"
-#     )
-#     assert response.status_code == status.HTTP_200_OK, response.text
-#     data = response.json()
-#     assert len(data) == bulk_response_member_count
-#     assert data['count'] == 1
-#     assert data['message'] == f'Deleted one Review from the database.'
-#     assert data['ids'] == [item.id]
-#     assert (await Review.get_count()) == (item_count - 1)
+@pytest.mark.anyio
+async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncClient):
+    book = await new_book()
+    critic = await new_critic()
+    item = await new_item()
+
+    response = await client.patch(
+        f"{route_base}",
+        json={
+            'id': item.id,
+            'title': f"Critic {critic.id}'s review of Book {book.id} title",
+            'critic_id': critic.id,
+            'book_id': book.id,
+            'rating': 3,
+            'body': f"Critic {critic.id}'s review of Book {book.id} body",
+        }
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['title'] == f"Critic {critic.id}'s review of Book {book.id} title"
+    assert data['critic_id'] == critic.id
+    assert data['book_id'] == book.id
+    assert data['rating'] == 3
+    assert data['body'] == f"Critic {critic.id}'s review of Book {book.id} body"
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) > item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
 
 
-# @pytest.mark.anyio
-# async def test_create_bulk(client: AsyncClient):
-#     # Get count before
-#     item_count = await Review.get_count()
-
-#     # Create items
-#     response = await client.post(
-#         f"{route_base}/bulk",
-#         json=[
-#                 # With all fields
-#                 {
-#                     'username': 'ultimate_worryer1994',
-#                     'bio': 'I like to read books and write reviews',
-#                     'name': 'Booker DeDimwitte',
-#                 },
-#                 # With only mandatory fields
-#                 {
-#                     'username': 'ultimate_worryer1995',
-#                 }
-#         ]
-#     )
-
-#     # Assert response
-#     assert response.status_code == status.HTTP_200_OK, response.text
-#     data = response.json()
-#     assert len(data) == bulk_response_member_count
-#     assert data['count'] == 2
-#     assert data['message'] == f'Created multiple Reviews in the database.'
-#     assert (await Review.get_count()) == (item_count + 2)
-
-#     # Assert values
-#     item1 = await Review.read_by_id(id=data['ids'][0])
-#     assert item1.username == 'ultimate_worryer1994'
-#     assert item1.bio == 'I like to read books and write reviews'
-#     assert item1.name == 'Booker DeDimwitte'
-#     assert item1.created_at is not None
-#     assert item1.updated_at is not None
-
-#     item2 = await Review.read_by_id(id=data['ids'][1])
-#     assert item2.username == 'ultimate_worryer1995'
-#     assert item2.bio is None
-#     assert item2.name is None
-#     assert item2.created_at is not None
-#     assert item2.updated_at is not None
+@pytest.mark.anyio
+async def test_delete_one(client: AsyncClient):
+    item = await new_item()
+    item_count = await Review.get_count()
+    response = await client.delete(
+        f"{route_base}/{item.id}"
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == bulk_response_member_count
+    assert data['count'] == 1
+    assert data['message'] == f'Deleted one Review from the database.'
+    assert data['ids'] == [item.id]
+    assert (await Review.get_count()) == (item_count - 1)
 
 
-# @pytest.mark.anyio
-# async def test_create_if_not_exists(client: AsyncClient):
-#     username = 'ultimate_worryer1996'
-#     db_item = await ModelClass.get_by_username(username)
-#     assert db_item is None
+@pytest.mark.anyio
+async def test_create_bulk(client: AsyncClient):
+    book1 = await new_book()
+    critic1 = await new_critic()
+    book2 = await new_book()
+    critic2 = await new_critic()
 
-#     # Create items
-#     response = await client.put(
-#         route_base,
-#         json={
-#                 'username': username,
-#                 'bio': 'I like to read books and write reviews',
-#                 'name': 'Booker DeDimwitte',
-#         }
-#     )
+    # Get count before
+    item_count = await Review.get_count()
 
-#     # Assert response
-#     assert response.status_code == status.HTTP_200_OK, response.text
-#     data = response.json()
-#     assert len(data) == get_model_member_count
-#     assert data['id'] > 0
-#     assert data['username'] == username
-#     assert data['bio'] == 'I like to read books and write reviews'
-#     assert data['name'] == 'Booker DeDimwitte'
-#     assert data['created_at'] is not None
-#     assert data['updated_at'] is not None
+    # Create items
+    response = await client.post(
+        f"{route_base}/bulk",
+        json=[
+                # With all fields
+                {
+                    'title': f"Critic {critic1.id}'s review of Book {book1.id} title",
+                    'critic_id': critic1.id,
+                    'book_id': book1.id,
+                    'rating': 3,
+                    'body': f"Critic {critic1.id}'s review of Book {book1.id} body",
+                },
+                # With only mandatory fields
+                {
+                    'title': f"Critic {critic2.id}'s review of Book {book2.id} title",
+                    'critic_id': critic2.id,
+                    'book_id': book2.id,
+                    'rating': 3,
+                    'body': f"Critic {critic2.id}'s review of Book {book2.id} body",
+                }
+        ]
+    )
+
+    # Assert response
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == bulk_response_member_count
+    assert data['count'] == 2
+    assert data['message'] == f'Created multiple Reviews in the database.'
+    assert (await Review.get_count()) == (item_count + 2)
+
+    # Assert values
+    item1 = await Review.read_by_id(id=data['ids'][0])
+    assert item1.title == f"Critic {critic1.id}'s review of Book {book1.id} title"
+    assert item1.critic_id == critic1.id
+    assert item1.book_id == book1.id
+    assert item1.rating == 3
+    assert item1.body == f"Critic {critic1.id}'s review of Book {book1.id} body"
+    assert item1.created_at is not None
+    assert item1.updated_at is not None
+
+    item2 = await Review.read_by_id(id=data['ids'][1])
+    assert item2.title == f"Critic {critic2.id}'s review of Book {book2.id} title"
+    assert item2.critic_id == critic2.id
+    assert item2.book_id == book2.id
+    assert item2.rating == 3
+    assert item2.body == f"Critic {critic2.id}'s review of Book {book2.id} body"
+    assert item2.created_at is not None
+    assert item2.updated_at is not None
+
+
+@pytest.mark.anyio
+async def test_create_if_not_exists(client: AsyncClient):
+    book = await new_book()
+    critic = await new_critic()
+
+    # Create items
+    response = await client.put(
+        route_base,
+        json={
+                'title': f"Critic {critic.id}'s review of Book {book.id} title",
+                'critic_id': critic.id,
+                'book_id': book.id,
+                'rating': 4,
+                'body': f"Critic {critic.id}'s review of Book {book.id} body",
+        }
+    )
+
+    # # Assert response
+    # assert response.status_code == status.HTTP_200_OK, response.text
+    # data = response.json()
+    # assert len(data) == get_model_member_count
+    # assert data['id'] > 0
+    # assert data['title'] == f"Critic {critic.id}'s review of Book {book.id} title"
+    # assert data['critic_id'] == critic.id
+    # assert data['book_id'] == book.id
+    # assert data['rating'] == 4
+    # assert data['body'] == f"Critic {critic.id}'s review of Book {book.id} body"
+    # assert data['created_at'] is not None
+    # assert data['updated_at'] is not None
 
 
 # @pytest.mark.anyio

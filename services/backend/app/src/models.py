@@ -18,9 +18,18 @@ from sqlalchemy.orm import (
 from sqlalchemy_utils import get_class_by_table
 from inflection import titleize, pluralize, underscore, camelize
 
+from src.config import READ_ALL_LIMIT_DEFAULT, READ_ALL_LIMIT_MAX
 from src.utils import ToDictMixin
 from src.database.service import DatabaseService
 from src.validators import AppValidator
+
+
+@lru_cache()
+def get_unique_constraint_name(
+    model_name: Any = None,
+    *field_names: Any,
+) -> str:
+    return f"uc_{model_name}_{'_'.join([camelize(c) for c in field_names])}"
 
 
 @lru_cache()
@@ -28,12 +37,12 @@ def generate_unique_constraint(
     *field_names: Any,
     model_name: Any = None,
     name: str = None,
-):
+) -> UniqueConstraint:
     # Given model name = 'Review', and field_names = ['critic_id', 'book_id'], produces 'uc_Review_CriticId_BookId'.
     # Bizarre that we need to use camelize here, but titleize drops the 'id' and produces 'Critic' from 'critic_id'.
     # camelize produces 'CriticId'.
     if name is None:
-        name = f"uc_{model_name}_{'_'.join([camelize(c) for c in field_names])}"
+        name = get_unique_constraint_name(model_name, *field_names)
 
     return UniqueConstraint(
         *field_names,
@@ -125,6 +134,11 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
 
     @classmethod
     @lru_cache(maxsize=1)
+    def get_unique_constraint_names(cls) -> List[str]:
+        return [c.name for c in cls.get_model_class().__table__.constraints if isinstance(c, UniqueConstraint)]
+
+    @classmethod
+    @lru_cache(maxsize=1)
     def get_settable_fieldnames(cls) -> List[str]:
         """Get a list of fieldnames that can be set by the user.
         This excludes fields such as id, created_at, updated_at, etc.
@@ -184,20 +198,12 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
     @classmethod
     async def read_all(
         cls,
-        offset: int = None,
-        limit: int = None,
+        offset: int = 0,
+        limit: int = READ_ALL_LIMIT_DEFAULT,
     ) -> List[Self]:
         async with DatabaseService.async_session() as session:
-            # Base query
-            q = select(cls.get_model_class()).offset(0).limit(limit)
-
-            # Apply offset and limit
-            if offset is not None:
-                q = q.offset(offset)
-
-            if limit is not None:
-                q = q.limit(limit)
-
+            limit = min(limit, READ_ALL_LIMIT_MAX)
+            q = select(cls.get_model_class()).offset(offset).limit(limit)
             res = await session.execute(q)
             all = res.scalars().all()
             meta = {
@@ -289,10 +295,22 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
     async def upsert(cls, item: AppValidator, apply_none_values: bool = False) -> Self:
         async with DatabaseService.async_session() as session:
             q = upsert(cls.get_model_class())
-            q = q.on_conflict_do_update(
-                index_elements=cls.get_unique_fieldnames(),
-                set_=cls.get_on_conflict_params(q=q)
-            )
+
+            ucn = cls.get_unique_constraint_names()
+            ucf = cls.get_unique_fieldnames()
+
+            # TODO: Ensure this is the desired behaviour
+            if len(ucf) > 0:
+                q = q.on_conflict_do_update(
+                    index_elements=cls.get_unique_fieldnames(),
+                    set_=cls.get_on_conflict_params(q=q)
+                )
+            elif len(ucn) > 0:
+                q = q.on_conflict_do_update(
+                    constraint=ucn[0],      # TODO: Handle multiple unique constraints?
+                    set_=cls.get_on_conflict_params(q=q)
+                )
+
             q = q.returning(cls.get_model_class().id)
             res = await session.execute(q, item.to_dict())
             await session.commit()
@@ -302,10 +320,21 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
     async def upsert_many(cls, items: List[AppValidator], apply_none_values: bool = False) -> List[int]:
         async with DatabaseService.async_session() as session:
             q = upsert(cls.get_model_class())
-            q = q.on_conflict_do_update(
-                index_elements=cls.get_unique_fieldnames(),
-                set_=cls.get_on_conflict_params(q=q),
-            )
+
+            ucn = cls.get_unique_constraint_names()
+            ucf = cls.get_unique_fieldnames()
+
+            # TODO: Ensure this is the desired behaviour
+            if len(ucf) > 0:
+                q = q.on_conflict_do_update(
+                    index_elements=cls.get_unique_fieldnames(),
+                    set_=cls.get_on_conflict_params(q=q)
+                )
+            elif len(ucn) > 0:
+                q = q.on_conflict_do_update(
+                    constraint=ucn[0],      # TODO: Handle multiple unique constraints?
+                    set_=cls.get_on_conflict_params(q=q)
+                )
             q = q.returning(cls.get_model_class().id)
             res = await session.execute(q, [item.to_dict(keep_none_values=apply_none_values) for item in items])
             await session.commit()

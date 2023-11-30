@@ -242,7 +242,7 @@ async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncCli
         }
     ).save()
     response = await client.patch(
-        f"{route_base}/{item.id}",
+        f"{route_base}",
         json={
             'id': item.id,
             'username': 'ultimate_worryer1992',

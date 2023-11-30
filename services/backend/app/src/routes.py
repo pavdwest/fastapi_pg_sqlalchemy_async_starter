@@ -41,6 +41,11 @@ def generate_route_class(
         prefix=f"{ApiVersion.V1}/{ModelClass.__tablename__}",
     )
     klass.router = router
+    klass.ModelClass                 = ModelClass
+    klass.ReadValidatorClass         = ReadValidatorClass
+    klass.CreateValidatorClass       = CreateValidatorClass
+    klass.UpdateValidatorClass       = UpdateValidatorClass
+    klass.UpdateWithIdValidatorClass = UpdateWithIdValidatorClass
 
 
     # Endpoints
@@ -186,7 +191,6 @@ def generate_route_class(
         offset: int = 0,
         limit: int = READ_ALL_LIMIT_DEFAULT
     ) -> List[ReadValidatorClass]:
-        limit = min(limit, READ_ALL_LIMIT_MAX)
         return [ReadValidatorClass.model_validate(item) for item in await ModelClass.read_all(offset=offset, limit=limit)]
 
 

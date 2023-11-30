@@ -265,7 +265,7 @@ async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncCli
         }
     ).save()
     response = await client.patch(
-        f"/api/v1/book/{item.id}",
+        f"/api/v1/book",
         json={
             'id': item.id,
             'identifier': '978-3-16-148410-11',
