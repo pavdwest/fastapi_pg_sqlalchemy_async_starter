@@ -480,11 +480,6 @@ async def test_upsert_bulk(client: AsyncClient):
     item_count_pre_update = await ModelClass.get_count()
 
     # Update items
-    book3 = await new_book()
-    critic3 = await new_critic()
-    book4 = await new_book()
-    critic4 = await new_critic()
-
     response = await client.put(
         f"{route_base}/bulk",
         json=[
