@@ -20,7 +20,7 @@ services:
       - postgres_data:/var/lib/postgresql/data/
 
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:latest
     restart: always
     ports:
       - "5050:80"

@@ -14,7 +14,7 @@ bulk_response_member_count = 3
 
 
 @pytest.mark.anyio
-async def test_get_all_empty(client: AsyncClient):
+async def test_read_all_empty(client: AsyncClient):
     response = await client.get(
         route_base
     )
@@ -149,6 +149,59 @@ async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
 
 
 @pytest.mark.anyio
+async def test_update_one_with_only_optional_fields(client: AsyncClient):
+    item = await Critic(
+        **{
+            'username': 'ultimate_worryer1987',
+            'bio': 'I like to read books and write reviews',
+            'name': 'Booker DeDimwitte',
+        }
+    ).save()
+    response = await client.patch(
+        f"{route_base}/{item.id}",
+        json={
+            'bio': 'I like to read books and write reviews2',
+            'name': 'Booker DeDimwitte2',
+        }
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
+    assert data['username'] == 'ultimate_worryer1987'
+    assert data['bio'] == 'I like to read books and write reviews2'
+    assert data['name'] == 'Booker DeDimwitte2'
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) > item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+
+
+@pytest.mark.anyio
+async def test_update_one_with_no_fields(client: AsyncClient):
+    item = await Critic(
+        **{
+            'username': 'ultimate_worryer19876',
+            'bio': 'I like to read books and write reviews6',
+            'name': 'Booker DeDimwitte6',
+        }
+    ).save()
+    response = await client.patch(
+        f"{route_base}/{item.id}",
+        json={}
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == get_model_member_count
+    assert data['id'] > 0
+    assert data['username'] == 'ultimate_worryer19876'
+    assert data['bio'] == 'I like to read books and write reviews6'
+    assert data['name'] == 'Booker DeDimwitte6'
+    assert datetime.fromisoformat(data['created_at']) == item.created_at
+    assert datetime.fromisoformat(data['updated_at']) == item.updated_at
+    assert datetime.fromisoformat(data['updated_at']) > datetime.fromisoformat(data['created_at'])
+
+
+@pytest.mark.anyio
 async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
     item = await Critic(
         **{
@@ -189,7 +242,7 @@ async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncCli
         }
     ).save()
     response = await client.patch(
-        f"{route_base}/{item.id}",
+        f"{route_base}",
         json={
             'id': item.id,
             'username': 'ultimate_worryer1992',
@@ -260,14 +313,14 @@ async def test_create_bulk(client: AsyncClient):
     assert (await Critic.get_count()) == (item_count + 2)
 
     # Assert values
-    item1 = await Critic.get_by_id(id=data['ids'][0])
+    item1 = await Critic.read_by_id(id=data['ids'][0])
     assert item1.username == 'ultimate_worryer1994'
     assert item1.bio == 'I like to read books and write reviews'
     assert item1.name == 'Booker DeDimwitte'
     assert item1.created_at is not None
     assert item1.updated_at is not None
 
-    item2 = await Critic.get_by_id(id=data['ids'][1])
+    item2 = await Critic.read_by_id(id=data['ids'][1])
     assert item2.username == 'ultimate_worryer1995'
     assert item2.bio is None
     assert item2.name is None
@@ -337,7 +390,7 @@ async def test_update_if_exists(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_create_or_update_bulk(client: AsyncClient):
+async def test_upsert_bulk(client: AsyncClient):
     # Get count before
     item_count = await ModelClass.get_count()
 
@@ -368,14 +421,14 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert (await ModelClass.get_count()) == (item_count + 2)
 
     # Assert values
-    item1 = await ModelClass.get_by_id(id=data['ids'][0])
+    item1 = await ModelClass.read_by_id(id=data['ids'][0])
     assert item1.username == 'ultimate_worryer1998'
     assert item1.bio == 'I like to read books and write reviews'
     assert item1.name == 'Booker DeDimwitte'
     assert item1.created_at is not None
     assert item1.updated_at is not None
 
-    item2 = await ModelClass.get_by_id(id=data['ids'][1])
+    item2 = await ModelClass.read_by_id(id=data['ids'][1])
     assert item2.username == 'ultimate_worryer1999'
     assert item2.bio is None
     assert item2.name is None
@@ -411,7 +464,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert (await ModelClass.get_count()) == item_count_pre_update
 
     # Assert values
-    item3 = await ModelClass.get_by_id(id=data['ids'][0])
+    item3 = await ModelClass.read_by_id(id=data['ids'][0])
     assert item3.id == item1.id
     assert item3.username == 'ultimate_worryer1998'
     assert item3.bio == 'I like to read books and write reviews in sql'
@@ -419,7 +472,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
     assert item3.created_at is not None
     assert item3.updated_at is not None
 
-    item4 = await ModelClass.get_by_id(id=data['ids'][1])
+    item4 = await ModelClass.read_by_id(id=data['ids'][1])
     assert item4.id == item2.id
     assert item4.username == 'ultimate_worryer1999'
     assert item4.bio is None
@@ -429,7 +482,7 @@ async def test_create_or_update_bulk(client: AsyncClient):
 
 
 @pytest.mark.anyio
-async def test_get_all_full(client: AsyncClient):
+async def test_read_all_full(client: AsyncClient):
     # Create two items
     item_second_last = await Critic(
         **{

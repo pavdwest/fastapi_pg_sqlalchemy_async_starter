@@ -1,11 +1,12 @@
 from __future__ import annotations
-from ast import Dict
+import asyncio
 from functools import lru_cache
-from typing import List, Optional
+from re import L
+from typing import Any, Dict, List, Optional, Type, Tuple
 from typing_extensions import Self
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Insert, text
+from sqlalchemy import BigInteger, Insert, text, UniqueConstraint
 from sqlalchemy import select, delete, update, insert
 from sqlalchemy.dialects.postgresql import insert as upsert
 from sqlalchemy import func
@@ -16,17 +17,47 @@ from sqlalchemy.orm import (
     mapped_column,
 )
 from sqlalchemy_utils import get_class_by_table
-from inflection import titleize, pluralize, underscore
+from inflection import titleize, pluralize, underscore, camelize
 
+from src.logging.service import logger
+from src.config import READ_ALL_LIMIT_DEFAULT, READ_ALL_LIMIT_MAX
+from src.utils import ToDictMixin
 from src.database.service import DatabaseService
 from src.validators import AppValidator
+
+
+@lru_cache()
+def get_unique_constraint_name(
+    model_name: Any = None,
+    *field_names: Any,
+) -> str:
+    # I know this isn't very SQLike but it will allow programmatically identifying it, e.g. 'uc_Review_CriticId_BookId'
+    return f"uc_{model_name}_{'_'.join([camelize(c) for c in field_names])}"
+
+
+@lru_cache()
+def generate_unique_constraint(
+    *field_names: Any,
+    model_name: Any = None,
+    name: str = None,
+) -> UniqueConstraint:
+    # Given model name = 'Review', and field_names = ['critic_id', 'book_id'], produces 'uc_Review_CriticId_BookId'.
+    # Bizarre that we need to use camelize here, but titleize drops the 'id' and produces 'Critic' from 'critic_id'.
+    # camelize produces 'CriticId'.
+    if name is None:
+        name = get_unique_constraint_name(model_name, *field_names)
+
+    return UniqueConstraint(
+        *field_names,
+        name=name,
+    )
 
 
 class IdMixin:
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
     @classmethod
-    async def get_by_id(cls, id: int) -> Self:
+    async def read_by_id(cls, id: int) -> Self:
         async with DatabaseService.async_session() as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
@@ -49,7 +80,7 @@ class IdentifierMixin:
     identifier: Mapped[str] = mapped_column(unique=True)
 
     @classmethod
-    async def get_by_identifier(cls, identifier: str) -> Self:
+    async def read_by_identifier(cls, identifier: str) -> Self:
         async with DatabaseService.async_session() as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().identifier == identifier)
             res = await session.execute(q)
@@ -64,35 +95,84 @@ class DescriptionMixin:
     name: Mapped[Optional[str]] = mapped_column(nullable=True)
 
 
-class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
+class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
     @declared_attr
     @lru_cache(maxsize=1)
-    def __tablename__(cls):
+    def __tablename__(cls) -> str:
+        """Get name of the table this model is mapped to.
+        Essentially, just underscore the class name.
+        This can be used in raw queries.
+
+        Returns:
+            str: Name of the table this model is mapped to.
+        """
         return underscore(cls.__name__)
 
     @classmethod
     @lru_cache(maxsize=1)
-    def get_model_class(cls):
+    def get_model_class(cls) -> Type[AppModel]:
+        """Gets a reference to the model class we're currently in
+
+        Returns:
+            Type[AppModel]: Class reference derived from AppModel
+        """
         return get_class_by_table(cls, cls.__table__)
 
     @declared_attr
     @lru_cache(maxsize=1)
     def __tablename_friendly__(cls):
+        """Get a human-readable tablename. Essentially, just pluralize and titleize the __tablename__.
+
+        Returns:
+            _type_: _description_
+        """
         return pluralize(titleize(cls.__tablename__))
 
     @classmethod
     @lru_cache(maxsize=1)
-    def get_unique_fields(cls):
+    def get_unique_fieldnames(cls) -> List[str]:
         return [
             c.name for c in cls.get_model_class().__table__.columns if c.unique
         ]
 
     @classmethod
     @lru_cache(maxsize=1)
-    def get_settable_fields(cls):
+    def get_unique_constraint_names(cls) -> List[str]:
+        return [c.name for c in cls.get_model_class().__table__.constraints if isinstance(c, UniqueConstraint)]
+
+    # TODO: Use reflection instead of hardcoding this
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_system_fieldnames(cls) -> List[str]:
+        """Get a list of fieldnames that are controlled by the system.
+        This includes fields such as id, created_at, updated_at, etc.
+
+        Returns:
+            List[str]: List of fieldnames controlled by the system.
+        """
+        return ['id', 'created_at', 'updated_at']
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_settable_fieldnames(cls) -> List[str]:
+        """Get a list of fieldnames that can be set by the user.
+        This excludes fields such as id, created_at, updated_at, etc.
+
+        Returns:
+            List[str]: List of fieldnames controlled by the user.
+        """
+        # TODO: use a mixin property
         return [
-            c.name for c in cls.get_model_class().__table__.columns if c.name not in ['id', 'created_at', 'updated_at']
+            c.name for c in cls.get_model_class().__table__.columns if c.name not in cls.get_system_fieldnames()
         ]
+
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_field_types(cls, fields: Tuple[str, ...]) -> Dict[str, Any]:
+        field_types = {}
+        for field in fields:
+            field_types[field] = getattr(cls.get_model_class(), field).type.python_type
+        return field_types
 
     @classmethod
     async def init_orm(cls):
@@ -104,18 +184,76 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
             pass
 
     @classmethod
+    async def get_mock_instance(cls, idx: int = None) -> Self:
+        if idx is None:
+            idx = await cls.get_max_id() + 1
+
+        payload = {}
+        settable_field_types = cls.get_field_types(fields=tuple(cls.get_settable_fieldnames()))
+
+        for f in settable_field_types:
+            if settable_field_types[f] == str:
+                payload[f] = f"{f} {idx}"
+            elif settable_field_types[f] == int:
+                payload[f] = idx
+            elif settable_field_types[f] == datetime:
+                payload[f] = datetime.utcnow()
+
+        return await cls.get_model_class()(**payload)
+
+    @classmethod
+    async def get_mock_instances(cls, count: int = 100) -> List[Self]:
+        idx = await cls.get_max_id() + 1
+        tasks = [cls.get_mock_instance(idx=idx+i) for i in range(count)]
+        return await asyncio.gather(*tasks)
+
+    @classmethod
+    async def seed_multiple(cls, count: int = 100) -> List[Self]:
+        idx = await cls.get_max_id() + 1
+        items = await cls.get_mock_instances(count=count)
+        return await cls.create_many(items=items)
+
+    @classmethod
+    async def seed_one(cls) -> Self:
+        idx = await cls.get_max_id() + 1
+        return await cls.get_mock_instance(idx=idx).save()
+
+    @classmethod
+    async def get_max_id(cls) -> int:
+        async with DatabaseService.async_session() as session:
+            q = select(func.max(cls.get_model_class().id))
+            res = await session.execute(q)
+            return res.scalar() or 0
+
+    @classmethod
     async def get_count(cls) -> int:
         async with DatabaseService.async_session() as session:
             q = select(func.count(cls.get_model_class().id))
             res = await session.execute(q)
             return res.scalar()
 
+    # TODO: Add metadata to the response
     @classmethod
-    async def read_all(cls) -> List[Self]:
+    async def read_all(
+        cls,
+        offset: int = 0,
+        limit: int = READ_ALL_LIMIT_DEFAULT,
+    ) -> List[Self]:
         async with DatabaseService.async_session() as session:
-            q = select(cls.get_model_class())
+            limit = min(limit, READ_ALL_LIMIT_MAX)
+            q = select(cls.get_model_class()).offset(offset).limit(limit)
             res = await session.execute(q)
-            return [r for r in res.scalars()]
+            all = res.scalars().all()
+            meta = {
+                "offset": offset,
+                "limit": limit,
+                "total": len(all)
+            }
+            # return {
+            #     'meta': meta,
+            #     'data': all,
+            # }
+            return all
 
     @classmethod
     async def popo_read_all(cls) -> List[Dict]:
@@ -135,7 +273,6 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
         async with DatabaseService.async_session() as session:
             q = delete(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
-            # await session.commit()
             return id
 
     @classmethod
@@ -155,15 +292,16 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
                 [
                     {
                         'id': id,
-                        **item.to_dict(remove_none_values=not apply_none_values)
+                        **item.to_dict(keep_none_values=apply_none_values)
                     }
                 ]
             )
             await session.commit()
-            return await cls.get_by_id(id=id)
+            return await cls.read_by_id(id=id)
 
+    # TODO: Find best way to do List[Self]
     @classmethod
-    async def create_many(cls, items: List[AppValidator]) -> List[int]:
+    async def create_many(cls, items: List[AppValidator] | List[Self]) -> List[int]:
         async with DatabaseService.async_session() as session:
             q = insert(cls.get_model_class()).returning(cls.get_model_class().id)
             res = await session.execute(q, [d.to_dict() for d in items])
@@ -173,35 +311,73 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin):
     @classmethod
     @lru_cache(maxsize=1)
     def get_on_conflict_fields(cls) -> List[str]:
-        return [f for f in cls.get_settable_fields() if f not in cls.get_unique_fields()]
+        """Gets a list of fieldnames that should be used in the ON CONFLICT clause of an upsert query.
+
+        Returns:
+            List[str]: List of fieldnames to update during upsert.
+        """
+        return [f for f in cls.get_settable_fieldnames() if f not in cls.get_unique_fieldnames()]
 
     @classmethod
     def get_on_conflict_params(cls, q: Insert) -> Dict:
+        """Injections for the ON CONFLICT clause of an upsert query.
+
+        Args:
+            q (Insert): the working insert statement
+
+        Returns:
+            Dict: A dict with the on_conflict params injected
+        """
         return { f: q.excluded[f] for f in cls.get_on_conflict_fields() }
 
     @classmethod
     async def upsert(cls, item: AppValidator, apply_none_values: bool = False) -> Self:
         async with DatabaseService.async_session() as session:
             q = upsert(cls.get_model_class())
-            q = q.on_conflict_do_update(
-                index_elements=cls.get_unique_fields(),
-                set_=cls.get_on_conflict_params(q=q)
-            )
+
+            ucn = cls.get_unique_constraint_names()
+            ucf = cls.get_unique_fieldnames()
+
+            # TODO: Ensure this is the desired behaviour
+            if len(ucf) > 0:
+                q = q.on_conflict_do_update(
+                    index_elements=cls.get_unique_fieldnames(),
+                    set_=cls.get_on_conflict_params(q=q)
+                )
+            elif len(ucn) > 0:
+                q = q.on_conflict_do_update(
+                    constraint=ucn[0],      # TODO: Handle multiple unique constraints?
+                    set_=cls.get_on_conflict_params(q=q)
+                )
+
             q = q.returning(cls.get_model_class().id)
             res = await session.execute(q, item.to_dict())
             await session.commit()
-            return await cls.get_by_id(id=res.scalar())
+            return await cls.read_by_id(id=res.scalar())
 
     @classmethod
     async def upsert_many(cls, items: List[AppValidator], apply_none_values: bool = False) -> List[int]:
         async with DatabaseService.async_session() as session:
             q = upsert(cls.get_model_class())
-            q = q.on_conflict_do_update(
-                index_elements=cls.get_unique_fields(),
-                set_=cls.get_on_conflict_params(q=q),
-            )
+
+            ucn = cls.get_unique_constraint_names()
+            ucf = cls.get_unique_fieldnames()
+
+            # TODO: Ensure this is the desired behaviour. This allows only the following:
+            # If there are any fields marked as unique, use those to uniquely identify the record.
+            # If there are no fields marked as unique, use the first unique constraint.
+            if len(ucf) > 0:
+                q = q.on_conflict_do_update(
+                    index_elements=cls.get_unique_fieldnames(),
+                    set_=cls.get_on_conflict_params(q=q)
+                )
+            elif len(ucn) > 0:
+                q = q.on_conflict_do_update(
+                    constraint=ucn[0],      # TODO: Handle multiple unique constraints?
+                    set_=cls.get_on_conflict_params(q=q)
+                )
             q = q.returning(cls.get_model_class().id)
-            res = await session.execute(q, [item.to_dict(remove_none_values=not apply_none_values) for item in items])
+            res = await session.execute(q, [item.to_dict(keep_none_values=apply_none_values) for item in items])
             await session.commit()
             return res.scalars().all()
 

@@ -15,7 +15,7 @@ def ExceptionProxy(e: IntegrityError) -> Exception:
 
 
 # Alternative version of the above that raises the exception
-def raise_known(e: IntegrityError) -> None:
+def handle_exception(e: IntegrityError) -> None:
     klass = PostgresError.get_message_class_for_sqlstate(e.orig.pgcode)
 
     # Switch to raise specific exception class
