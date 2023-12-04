@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 from functools import lru_cache
 from re import L
 from typing import Any, Dict, List, Optional, Type, Tuple
@@ -18,6 +19,7 @@ from sqlalchemy.orm import (
 from sqlalchemy_utils import get_class_by_table
 from inflection import titleize, pluralize, underscore, camelize
 
+from src.logging.service import logger
 from src.config import READ_ALL_LIMIT_DEFAULT, READ_ALL_LIMIT_MAX
 from src.utils import ToDictMixin
 from src.database.service import DatabaseService
@@ -29,6 +31,7 @@ def get_unique_constraint_name(
     model_name: Any = None,
     *field_names: Any,
 ) -> str:
+    # I know this isn't very SQLike but it will allow programmatically identifying it, e.g. 'uc_Review_CriticId_BookId'
     return f"uc_{model_name}_{'_'.join([camelize(c) for c in field_names])}"
 
 
@@ -137,6 +140,18 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
     def get_unique_constraint_names(cls) -> List[str]:
         return [c.name for c in cls.get_model_class().__table__.constraints if isinstance(c, UniqueConstraint)]
 
+    # TODO: Use reflection instead of hardcoding this
+    @classmethod
+    @lru_cache(maxsize=1)
+    def get_system_fieldnames(cls) -> List[str]:
+        """Get a list of fieldnames that are controlled by the system.
+        This includes fields such as id, created_at, updated_at, etc.
+
+        Returns:
+            List[str]: List of fieldnames controlled by the system.
+        """
+        return ['id', 'created_at', 'updated_at']
+
     @classmethod
     @lru_cache(maxsize=1)
     def get_settable_fieldnames(cls) -> List[str]:
@@ -148,7 +163,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
         """
         # TODO: use a mixin property
         return [
-            c.name for c in cls.get_model_class().__table__.columns if c.name not in ['id', 'created_at', 'updated_at']
+            c.name for c in cls.get_model_class().__table__.columns if c.name not in cls.get_system_fieldnames()
         ]
 
     @classmethod
@@ -169,14 +184,13 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             pass
 
     @classmethod
-    async def seed(cls, count: int = 100):
-        for i in range(count):
-            await cls.seed_instance(idx=i).save()
+    async def get_mock_instance(cls, idx: int = None) -> Self:
+        if idx is None:
+            idx = await cls.get_max_id() + 1
 
-    @classmethod
-    async def seed_instance(cls, idx: int) -> Self:
         payload = {}
         settable_field_types = cls.get_field_types(fields=tuple(cls.get_settable_fieldnames()))
+
         for f in settable_field_types:
             if settable_field_types[f] == str:
                 payload[f] = f"{f} {idx}"
@@ -185,7 +199,31 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             elif settable_field_types[f] == datetime:
                 payload[f] = datetime.utcnow()
 
-        return cls.get_model_class()(**payload)
+        return await cls.get_model_class()(**payload)
+
+    @classmethod
+    async def get_mock_instances(cls, count: int = 100) -> List[Self]:
+        idx = await cls.get_max_id() + 1
+        tasks = [cls.get_mock_instance(idx=idx+i) for i in range(count)]
+        return await asyncio.gather(*tasks)
+
+    @classmethod
+    async def seed_multiple(cls, count: int = 100) -> List[Self]:
+        idx = await cls.get_max_id() + 1
+        items = await cls.get_mock_instances(count=count)
+        return await cls.create_many(items=items)
+
+    @classmethod
+    async def seed_one(cls) -> Self:
+        idx = await cls.get_max_id() + 1
+        return await cls.get_mock_instance(idx=idx).save()
+
+    @classmethod
+    async def get_max_id(cls) -> int:
+        async with DatabaseService.async_session() as session:
+            q = select(func.max(cls.get_model_class().id))
+            res = await session.execute(q)
+            return res.scalar() or 0
 
     @classmethod
     async def get_count(cls) -> int:
@@ -261,8 +299,9 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             await session.commit()
             return await cls.read_by_id(id=id)
 
+    # TODO: Find best way to do List[Self]
     @classmethod
-    async def create_many(cls, items: List[AppValidator]) -> List[int]:
+    async def create_many(cls, items: List[AppValidator] | List[Self]) -> List[int]:
         async with DatabaseService.async_session() as session:
             q = insert(cls.get_model_class()).returning(cls.get_model_class().id)
             res = await session.execute(q, [d.to_dict() for d in items])
@@ -324,7 +363,9 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             ucn = cls.get_unique_constraint_names()
             ucf = cls.get_unique_fieldnames()
 
-            # TODO: Ensure this is the desired behaviour
+            # TODO: Ensure this is the desired behaviour. This allows only the following:
+            # If there are any fields marked as unique, use those to uniquely identify the record.
+            # If there are no fields marked as unique, use the first unique constraint.
             if len(ucf) > 0:
                 q = q.on_conflict_do_update(
                     index_elements=cls.get_unique_fieldnames(),

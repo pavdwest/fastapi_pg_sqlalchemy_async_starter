@@ -3,6 +3,7 @@ from typing import Type, List, Dict
 from fastapi import APIRouter, status, HTTPException
 from inflection import pluralize
 
+from src.logging.service import logger
 from src.config import READ_ALL_LIMIT_DEFAULT, READ_ALL_LIMIT_MAX
 from src.versions import ApiVersion
 from src.database.exceptions import handle_exception
@@ -14,17 +15,6 @@ from src.validators import (
     UpdateValidator,
     UpdateWithIdValidator,
 )
-
-
-def generate_simple_class(
-    name: str):
-    klass = type(name, (object,), {})
-
-    def test(self):
-        print('test')
-
-    klass.test = test
-    return klass
 
 
 def generate_route_class(
@@ -159,8 +149,6 @@ def generate_route_class(
                 detail=f"Object with id={id} not found."
             )
 
-        print(item.to_dict())
-
         return ReadValidatorClass.model_validate(item.__dict__)
 
 
@@ -241,25 +229,9 @@ def generate_route_class(
     )
     async def seed_data(n: int = 100000) -> Dict:
         import time
-        import asyncio
-
-        # Prep test
-        await ModelClass.delete_all()
         s = time.monotonic()
-        batch_size = 10000
-        orms = []
-        tasks = []
-
-        for i in range(n):
-            orms.append(
-                await ModelClass.seed_instance(idx=i + 1)
-            )
-            if len(orms) == batch_size or i == n - 1:
-                tasks.append(ModelClass.create_many(items=orms))
-                orms = []
-
-        await asyncio.gather(*tasks)
-        print(time.monotonic() - s)
+        items = await ModelClass.seed_multiple(n)
+        logger.warning(f"Took: {time.monotonic() - s} seconds")
         return {
             'message': 'Done'
         }
@@ -279,29 +251,29 @@ def generate_route_class(
         s = time.monotonic()
         res = await ModelClass.read_all()  # 10.190340717992513 for 1 mil, Calc: 0.4833592210052302
         # res = await Book.popo_read_all() # 2.038523224997334 for 1 mil, Calc: 68.26654115399288
-        print(f"Fetch: {time.monotonic() - s}")
+        logger.warning(f"Fetch: {time.monotonic() - s}")
 
         # Sum all release years
         s = time.monotonic()
         ry = sum([item.release_year for item in res])
-        print(f"Calc: res={ry} took {time.monotonic() - s}")
+        logger.warning(f"Calc: res={ry} took {time.monotonic() - s}")
         return {
             'message': 'Done'
         }
 
 
-    # Link functions to class
-    klass.create_one         = create_one
-    klass.update_one         = update_one
-    klass.update_one_with_id = update_one_with_id
-    klass.upsert_one         = upsert_one
-    klass.delete_one         = delete_one
-    klass.read_by_id         = read_by_id
-    klass.delete_all         = delete_all
-    klass.read_all           = read_all
-    klass.create_many        = create_many
-    klass.upsert_many        = upsert_many
-    klass.seed_data          = seed_data
-    klass.performance_test   = performance_test
+    # Link functions to class - not sure it's necessary but could be useful
+    setattr(klass, 'create_one',         create_one)
+    setattr(klass, 'update_one',         update_one)
+    setattr(klass, 'update_one_with_id', update_one_with_id)
+    setattr(klass, 'upsert_one',         upsert_one)
+    setattr(klass, 'delete_one',         delete_one)
+    setattr(klass, 'read_by_id',         read_by_id)
+    setattr(klass, 'delete_all',         delete_all)
+    setattr(klass, 'read_all',           read_all)
+    setattr(klass, 'create_many',        create_many)
+    setattr(klass, 'upsert_many',        upsert_many)
+    setattr(klass, 'seed_data',          seed_data)
+    setattr(klass, 'performance_test',   performance_test)
 
     return klass
