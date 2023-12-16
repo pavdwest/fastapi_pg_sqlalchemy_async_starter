@@ -15,6 +15,7 @@ bulk_response_member_count = 3
 
 @pytest.mark.anyio
 async def test_read_all_empty(client: AsyncClient):
+    await Book.delete_all()
     response = await client.get(
         route_base
     )

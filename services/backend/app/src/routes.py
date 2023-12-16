@@ -4,7 +4,7 @@ from fastapi import APIRouter, status, HTTPException
 from inflection import pluralize
 
 from src.logging.service import logger
-from src.config import READ_ALL_LIMIT_DEFAULT, READ_ALL_LIMIT_MAX
+from src.config import READ_ALL_LIMIT_DEFAULT
 from src.versions import ApiVersion
 from src.database.exceptions import handle_exception
 from src.models import AppModel
@@ -49,7 +49,8 @@ def generate_route_class(
     async def create_one(item: CreateValidatorClass) -> ReadValidatorClass:
         try:
             res = await ModelClass(**item.__dict__).save()
-            return ReadValidatorClass.model_validate(res)
+            # We use model_construct to ignore validations as this data is coming from the db and already validated
+            return ReadValidatorClass.model_construct(**res.to_dict())
         except Exception as e:
             handle_exception(e)
 
@@ -71,7 +72,7 @@ def generate_route_class(
             )
 
         res = await ModelClass.update_by_id(id=id, item=item)
-        return ReadValidatorClass.model_validate(res)
+        return ReadValidatorClass.model_construct(**res.to_dict())
 
 
     @router.patch(
@@ -91,7 +92,7 @@ def generate_route_class(
             )
 
         res = await ModelClass.update_by_id(id=item.id, item=item)
-        return ReadValidatorClass.model_validate(res)
+        return ReadValidatorClass.model_construct(**res.to_dict())
 
 
     @router.put(
@@ -104,7 +105,7 @@ def generate_route_class(
     async def upsert_one(item: CreateValidatorClass) -> ReadValidatorClass:
         try:
             res = await ModelClass.upsert(item=item)
-            return ReadValidatorClass.model_validate(res)
+            return ReadValidatorClass.model_construct(**res.to_dict())
         except Exception as e:
             handle_exception(e)
 
@@ -149,7 +150,7 @@ def generate_route_class(
                 detail=f"Object with id={id} not found."
             )
 
-        return ReadValidatorClass.model_validate(item.__dict__)
+        return ReadValidatorClass.model_construct(item.to_dict())
 
 
     @router.delete(
@@ -179,7 +180,7 @@ def generate_route_class(
         offset: int = 0,
         limit: int = READ_ALL_LIMIT_DEFAULT
     ) -> List[ReadValidatorClass]:
-        return [ReadValidatorClass.model_validate(item) for item in await ModelClass.read_all(offset=offset, limit=limit)]
+        return [ReadValidatorClass.model_construct(**item.to_dict()) for item in await ModelClass.read_all(offset=offset, limit=limit)]
 
 
     @router.post(

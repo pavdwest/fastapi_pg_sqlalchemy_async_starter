@@ -16,9 +16,14 @@ class Singleton(object):
 class ToDictMixin:
     def to_dict(
         self,
-        keep_none_values: bool = False,
+        keep_none_values: bool = True,
         remove_keys: List[str] = None,
     ) -> Dict:
+        # Early return
+        if keep_none_values and remove_keys is None:
+            return self.__dict__
+
+        # Remove keys
         d = self.__dict__
         if remove_keys is not None:
             [d.pop(k) for k in remove_keys]
