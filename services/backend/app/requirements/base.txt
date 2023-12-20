@@ -10,3 +10,4 @@ pydantic
 pytest
 httpx
 asgi-lifespan
+arq
