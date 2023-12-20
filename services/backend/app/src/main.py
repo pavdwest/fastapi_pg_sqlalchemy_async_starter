@@ -1,7 +1,7 @@
 from src.app import App
 from src.route_manager import register_routes
 from src.models import AppModel
-from src.queue import queue_init
+from src.modules.arqueue.bus import Bus
 
 
 # Custom Startup & Shutdown Handlers
@@ -19,6 +19,6 @@ async def shutdown():
 
 # Create app instance
 app = App(
-    on_startup_handlers=[startup, queue_init],
+    on_startup_handlers=[startup, Bus.init],
     on_shutdown_handlers=[shutdown]
 ).get()
