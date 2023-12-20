@@ -84,7 +84,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PASSWORD=admin
       - REDIS_PORT=6379
-    command: arq src.worker.WorkerSettings
+    command: arq src.modules.arqueue.worker.WorkerSettings
     volumes:
       - ./services/backend/app:/backend/app
       - /backend/app/.ignore
