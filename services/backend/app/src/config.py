@@ -18,5 +18,10 @@ DATABASE_URL_SYNC: str        = f"postgresql+psycopg2://{DATABASE_USERNAME}:{DAT
 DATABASE_URL_ASYNC: str       = f"postgresql+asyncpg://{DATABASE_USERNAME}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 
 # Routes
-READ_ALL_LIMIT_DEFAULT: int = int(os.environ.get('GET_ITEM_COUNT_DEFAULT', 100))
-READ_ALL_LIMIT_MAX: int     = int(os.environ.get('GET_ITEM_COUNT_MAX', 200))
+READ_ALL_LIMIT_DEFAULT: int   = int(os.environ.get('GET_ITEM_COUNT_DEFAULT', 100))
+READ_ALL_LIMIT_MAX: int       = int(os.environ.get('GET_ITEM_COUNT_MAX', 200))
+
+# Redis
+REDIS_HOST: str               = os.environ.get('REDIS_HOST')
+REDIS_PORT: str               = os.environ.get('REDIS_PORT')
+REDIS_PASSWORD: str           = os.environ.get('REDIS_PASSWORD')

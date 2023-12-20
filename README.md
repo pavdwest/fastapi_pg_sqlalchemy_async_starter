@@ -95,3 +95,29 @@ A note on conventions: https://stackoverflow.com/questions/4702728/relational-ta
 4. Run migration:
 
     ```docker exec -it fastapi_pg_sqlalchemy-backend-1 alembic upgrade head"```
+
+# Further Considerations
+
+## Logging solution
+
+TODO
+
+## Task Queues & Workers
+
+Most likely Redis/RabbitMQ/Celery
+
+## Multi-Tenancy
+
+There is currently no concept of multi-tenancy. Will likely implement multi-tenancy at schema (most likely the best middle-ground between separation and amount of admin) or database level. Row-level separation makes me uncomfortable for a number of reasons.
+
+# Auditing
+
+TODO
+
+## Authentication/Authorization
+
+TODO
+
+## Append-Only vs. Standard CRUD
+
+Currently uses all operations, create, read, update and delete. Might consider create only, but that brings with it its own slew of complications. Does simplify write-scalability and auditing.

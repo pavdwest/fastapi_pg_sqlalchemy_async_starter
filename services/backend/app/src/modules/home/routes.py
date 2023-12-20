@@ -3,6 +3,7 @@ from typing import Dict
 from fastapi import APIRouter, status, Response
 
 from src.versions import ApiVersion
+from src.queue import queue_init
 
 
 router = APIRouter(
@@ -29,6 +30,11 @@ async def home(response: Response) -> Dict:
             'message': 'Hello boils and ghouls'
         }
     """
+    queue = await queue_init()
+
+    for url in ('https://facebook.com', 'https://microsoft.com', 'https://github.com'):
+        await queue.enqueue_job('download_content', url)
+
     return {
         'message': 'Hello boils and ghouls'
     }
