@@ -1,5 +1,5 @@
 from src.app import App
-from src.route_manager import register_routes
+from src.helpers.route_manager import register_routes
 from src.models import AppModel
 from src.modules.arqueue.bus import Bus
 
