@@ -3,7 +3,6 @@ from typing import Dict
 from fastapi import APIRouter, status, Response
 
 from src.versions import ApiVersion
-from src.modules.arqueue.bus import Bus
 
 
 router = APIRouter(
@@ -30,10 +29,6 @@ async def home(response: Response) -> Dict:
             'message': 'Hello boils and ghouls'
         }
     """
-
-    for url in ('https://facebook.com', 'https://microsoft.com', 'https://github.com'):
-        await Bus.queue.enqueue_job('download_content', url)
-
     return {
         'message': 'Hello boils and ghouls'
     }
