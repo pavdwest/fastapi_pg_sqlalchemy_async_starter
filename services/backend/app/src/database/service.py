@@ -79,7 +79,7 @@ class DatabaseService:
 
             # TODO: Add some more detailed error handling if this borks
             if not database_exists(url=DATABASE_URL_SYNC):
-                raise Exception(f"COULD NOT CREATE DATABASE!")
+                raise Exception('COULD NOT CREATE DATABASE!')
             else:
                 logger.warning('Database created.')
         else:

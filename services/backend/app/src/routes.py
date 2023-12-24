@@ -126,7 +126,7 @@ def generate_route_class(
                 detail=f"Object with id={id} not found."
             )
 
-        res = await ModelClass.delete_by_id(id=id)
+        await ModelClass.delete_by_id(id=id)
         return Bulk(
             message=f'Deleted one {ModelClass.__name__} from the database.',
             count=1,
@@ -231,7 +231,7 @@ def generate_route_class(
     async def seed_data(n: int = 100000) -> Dict:
         import time
         s = time.monotonic()
-        items = await ModelClass.seed_multiple(n)
+        await ModelClass.seed_multiple(n)
         logger.warning(f"Took: {time.monotonic() - s} seconds")
         return {
             'message': 'Done'
@@ -256,7 +256,10 @@ def generate_route_class(
 
         # Sum all release years
         s = time.monotonic()
-        ry = sum([item.release_year for item in res])
+        # ry = sum([item.release_year for item in res])
+        ry = sum([ReadValidatorClass.model_validate(item).release_year for item in res])
+        # ry = sum([ReadValidatorClass.model_construct(**item.to_dict()).release_year for item in res])
+
         logger.warning(f"Calc: res={ry} took {time.monotonic() - s}")
         return {
             'message': 'Done'

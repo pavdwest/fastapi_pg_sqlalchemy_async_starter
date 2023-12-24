@@ -1,7 +1,6 @@
 from __future__ import annotations
 import asyncio
 from functools import lru_cache
-from re import L
 from typing import Any, Dict, List, Optional, Type, Tuple
 from typing_extensions import Self
 from datetime import datetime
@@ -176,12 +175,12 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
 
     @classmethod
     async def init_orm(cls):
-        # async with DatabaseService.get().async_engine.begin() as conn:
-        async with DatabaseService.async_session() as conn:
-            # logger.warning("Creating tables...")
-            # await conn.run_sync(cls.metaitem.drop_all)
-            # await conn.run_sync(cls.metaitem.create_all)
-            pass
+        pass
+        # async with DatabaseService.async_session() as conn:
+        #     # logger.warning("Creating tables...")
+        #     # await conn.run_sync(cls.metaitem.drop_all)
+        #     # await conn.run_sync(cls.metaitem.create_all)
+        #     pass
 
     @classmethod
     async def get_mock_instance(cls, idx: int = None) -> Self:
@@ -209,7 +208,6 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
 
     @classmethod
     async def seed_multiple(cls, count: int = 100) -> List[Self]:
-        idx = await cls.get_max_id() + 1
         items = await cls.get_mock_instances(count=count)
         return await cls.create_many(items=items)
 
@@ -244,11 +242,11 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             q = select(cls.get_model_class()).offset(offset).limit(limit)
             res = await session.execute(q)
             all = res.scalars().all()
-            meta = {
-                "offset": offset,
-                "limit": limit,
-                "total": len(all)
-            }
+            # meta = {
+            #     "offset": offset,
+            #     "limit": limit,
+            #     "total": len(all)
+            # }
             # return {
             #     'meta': meta,
             #     'data': all,
@@ -272,7 +270,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
     async def delete_by_id(cls, id: int) -> int:
         async with DatabaseService.async_session() as session:
             q = delete(cls.get_model_class()).where(cls.get_model_class().id == id)
-            res = await session.execute(q)
+            await session.execute(q)
             return id
 
     @classmethod
@@ -287,7 +285,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
     async def update_by_id(cls, id: int, item: AppValidator, apply_none_values: bool = False) -> Self:
         async with DatabaseService.async_session() as session:
             q = update(cls.get_model_class())
-            res = await session.execute(
+            await session.execute(
                 q,
                 [
                     {
