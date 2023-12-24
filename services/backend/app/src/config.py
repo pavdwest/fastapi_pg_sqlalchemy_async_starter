@@ -24,4 +24,3 @@ READ_ALL_LIMIT_MAX: int       = int(os.environ.get('GET_ITEM_COUNT_MAX', 200))
 # Redis
 REDIS_HOST: str               = os.environ.get('REDIS_HOST')
 REDIS_PORT: str               = os.environ.get('REDIS_PORT')
-REDIS_PASSWORD: str           = os.environ.get('REDIS_PASSWORD')
