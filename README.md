@@ -96,6 +96,10 @@ A note on conventions: https://stackoverflow.com/questions/4702728/relational-ta
 
     ```docker exec -it fastapi_pg_sqlalchemy-backend-1 alembic upgrade head"```
 
+# Useful Commands
+
+```docker compose scale worker=10```
+
 # Further Considerations
 
 ## Logging solution

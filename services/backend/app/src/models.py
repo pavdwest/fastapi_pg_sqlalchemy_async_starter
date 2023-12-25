@@ -19,7 +19,6 @@ from sqlalchemy_utils import get_class_by_table
 from inflection import titleize, pluralize, underscore, camelize
 
 from src.logging.service import logger
-from src.config import READ_ALL_LIMIT_DEFAULT, READ_ALL_LIMIT_MAX
 from src.utils import ToDictMixin
 from src.database.service import DatabaseService
 from src.validators import AppValidator
@@ -234,12 +233,17 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
     @classmethod
     async def read_all(
         cls,
-        offset: int = 0,
-        limit: int = READ_ALL_LIMIT_DEFAULT,
+        offset: int = None,
+        limit: int = None,
     ) -> List[Self]:
         async with DatabaseService.async_session() as session:
-            limit = min(limit, READ_ALL_LIMIT_MAX)
-            q = select(cls.get_model_class()).offset(offset).limit(limit)
+            q = select(cls.get_model_class())
+
+            if offset is not None:
+                q = q.offset(offset)
+            if limit is not None:
+                q = q.limit(limit)
+
             res = await session.execute(q)
             all = res.scalars().all()
             # meta = {

@@ -50,16 +50,14 @@ async def sandbox(response: Response) -> Dict:
 
 
 @router.get(
-    '/arqueue/throughput',
+    '/arqueue/no_op_task',
     response_model=Dict,
     status_code=status.HTTP_200_OK,
     summary='Throughput testing Arqueue',
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def no_op_task(response: Response) -> Dict:
-
-    n = 10000
-
+async def no_op_task(n: int = 2500) -> Dict:
+    logger.warning(f'Enqueuing {n} tasks...')
     # Blast
     # 11s for 5k with 1 worker - 450/s, very slow too
     # 6s for 5k with 20 worker - 900/s, very slow too
@@ -71,11 +69,25 @@ async def no_op_task(response: Response) -> Dict:
     # 6s for 5k with 20 worker: 900/s, very slow too
     # 125s for 50k with 2 worker: 400/s, very slow too
     # 48 for 50k with 20 worker: 1000/s, very slow too
-    logger.warning(f'Enqueuing {n} tasks...')
     for i in range(n):
         await Bus.queue.enqueue_job('no_op_task', i)
     logger.warning(f'Enqueued {n} tasks')
 
+    return {
+        'message': 'Sandbox tasks enqueued.',
+    }
+
+
+@router.get(
+    '/arqueue/db_task',
+    response_model=Dict,
+    status_code=status.HTTP_200_OK,
+    summary='Db task testing Arqueue',
+    description='Endpoint description. Will use the docstring if not provided.',
+)
+async def db_task(n: int = 2500) -> Dict:
+    tasks = [Bus.queue.enqueue_job('db_task', i) for i in range(n)]
+    await asyncio.gather(*tasks)
     return {
         'message': 'Sandbox tasks enqueued.',
     }

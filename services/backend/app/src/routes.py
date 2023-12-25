@@ -1,10 +1,10 @@
 from typing import Type, List, Dict
 
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, status, HTTPException, Query
 from inflection import pluralize
 
 from src.logging.service import logger
-from src.config import READ_ALL_LIMIT_DEFAULT
+from src.config import READ_ALL_LIMIT_DEFAULT, READ_ALL_LIMIT_MAX
 from src.versions import ApiVersion
 from src.database.exceptions import handle_exception
 from src.models import AppModel
@@ -177,9 +177,17 @@ def generate_route_class(
         description='Endpoint description. Will use the docstring if not provided.',
     )
     async def read_all(
-        offset: int = 0,
-        limit: int = READ_ALL_LIMIT_DEFAULT
+        offset: int = Query(
+            default=0,
+            ge=0,
+        ),
+        limit: int = Query(
+            default=READ_ALL_LIMIT_DEFAULT,
+            ge=1,
+            le=READ_ALL_LIMIT_MAX,
+        ),
     ) -> List[ReadValidatorClass]:
+        limit = min(limit, READ_ALL_LIMIT_MAX)
         return [ReadValidatorClass.model_construct(**item.to_dict()) for item in await ModelClass.read_all(offset=offset, limit=limit)]
 
 
