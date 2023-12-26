@@ -5,6 +5,7 @@ from src.modules.book.routes import router as book_router
 from src.modules.critic.routes import router as critic_router
 from src.modules.review.routes import router as review_router
 from src.modules.arqueue.routes import router as arqueue_router
+from src.modules.plrs.routes import router as plrs_router
 
 
 def register_routes(app: FastAPI):
@@ -16,3 +17,4 @@ def register_routes(app: FastAPI):
     app.include_router(book_router.router)
     app.include_router(critic_router.router)
     app.include_router(review_router.router)
+    app.include_router(plrs_router.router)

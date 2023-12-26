@@ -11,3 +11,7 @@ pytest
 httpx
 asgi-lifespan
 arq
+faker
+pyarrow
+connectorx
+polars

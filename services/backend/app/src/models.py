@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Type, Tuple
 from typing_extensions import Self
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Insert, text, UniqueConstraint
+from sqlalchemy import BigInteger, Insert, Select, text, UniqueConstraint
 from sqlalchemy import select, delete, update, insert
 from sqlalchemy.dialects.postgresql import insert as upsert
 from sqlalchemy import func
@@ -207,8 +207,17 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
 
     @classmethod
     async def seed_multiple(cls, count: int = 100) -> List[Self]:
-        items = await cls.get_mock_instances(count=count)
-        return await cls.create_many(items=items)
+        item_instances = await cls.get_mock_instances(count=count)
+        items = []
+        batch_size = 5000
+        for i in range(len(item_instances)):
+            if i % batch_size == 0:
+                items.append(await cls.create_many(items=item_instances[:batch_size]))
+                del item_instances[:batch_size]
+                logger.info(f"Seeded {i} items so far...")
+
+        logger.info(f"Seeded {len(items)} batches of {batch_size} items each.")
+        return items
 
     @classmethod
     async def seed_one(cls) -> Self:
@@ -256,6 +265,29 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             #     'data': all,
             # }
             return all
+
+
+    @classmethod
+    async def read_all_sql(
+        cls,
+        offset: int = None,
+        limit: int = None,
+    ) -> str:
+        async with DatabaseService.async_session() as session:
+            q = select(cls.get_model_class())
+
+            if offset is not None:
+                q = q.offset(offset)
+            if limit is not None:
+                q = q.limit(limit)
+
+            return str(
+                q.compile(
+                    dialect=session.bind.dialect,
+                    compile_kwargs={"literal_binds": True},
+                )
+            )
+
 
     @classmethod
     async def popo_read_all(cls) -> List[Dict]:

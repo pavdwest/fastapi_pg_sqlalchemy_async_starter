@@ -27,6 +27,8 @@ services:
       - "redis_data:/redis/data"
 
   pgadmin:
+    depends_on:
+      - db
     image: dpage/pgadmin4:latest
     restart: always
     ports:
