@@ -32,8 +32,8 @@ def pyfib(n):
     return pyfib(n - 1) + pyfib(n - 2)
 
 
-@njit
-def nbfib(n):
+@njit(fastmath=True, cache=True)
+def nbfib(n: int):
     if n <= 0:
         return 0
     elif n == 1:
@@ -79,4 +79,6 @@ async def cpp_calc() -> Dict:
         'ctime': ctime,
         'pytime': pytime,
         'nbtime': nbtime,
+        'cspeedup': pytime / ctime,
+        'nbspeedup': pytime / nbtime,
     }
