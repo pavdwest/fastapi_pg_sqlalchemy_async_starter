@@ -165,7 +165,8 @@ def generate_route_class(
         return Bulk(
             message=f'Deleted all {pluralize(ModelClass.__name__)} in the database.',
             count=len(res),
-            ids=res
+            # ids=res,
+            ids=[-1],
         )
 
 

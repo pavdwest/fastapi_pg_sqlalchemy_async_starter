@@ -27,7 +27,6 @@ RouteClass = generate_route_class(
 router = RouteClass()
 
 
-
 @(router.router).get(
     'sandbox/',
     response_model=Dict,
@@ -37,7 +36,7 @@ router = RouteClass()
 )
 async def sandbox() -> Dict:
     start = time.monotonic()
-    q = await Trade.read_all_sql()
+    q = Trade.read_all_sql()
     print(f'Query build took {time.monotonic() - start:.5f} seconds.')
 
     start = time.monotonic()

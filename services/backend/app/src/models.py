@@ -7,6 +7,7 @@ from datetime import datetime
 
 from sqlalchemy import BigInteger, Insert, Select, text, UniqueConstraint
 from sqlalchemy import select, delete, update, insert
+from sqlalchemy.dialects.postgresql import dialect
 from sqlalchemy.dialects.postgresql import insert as upsert
 from sqlalchemy import func
 from sqlalchemy.ext.declarative import declared_attr
@@ -200,24 +201,24 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
         return await cls.get_model_class()(**payload)
 
     @classmethod
-    async def get_mock_instances(cls, count: int = 100) -> List[Self]:
-        idx = await cls.get_max_id() + 1
+    async def get_mock_instances(cls, count: int = 100, force_id: int = None) -> List[Self]:
+        idx = await cls.get_max_id() + 1 if force_id is None else force_id
         tasks = [cls.get_mock_instance(idx=idx+i) for i in range(count)]
         return await asyncio.gather(*tasks)
 
     @classmethod
-    async def seed_multiple(cls, count: int = 100) -> List[Self]:
-        item_instances = await cls.get_mock_instances(count=count)
-        items = []
+    async def seed_multiple(cls, count: int = 100):
         batch_size = 5000
-        for i in range(len(item_instances)):
-            if i % batch_size == 0:
-                items.append(await cls.create_many(items=item_instances[:batch_size]))
-                del item_instances[:batch_size]
-                logger.info(f"Seeded {i} items so far...")
+        idx = await cls.get_max_id()
+        logger.warning(f"IDX {idx}")
 
-        logger.info(f"Seeded {len(items)} batches of {batch_size} items each.")
-        return items
+        for i in range(0, count, batch_size):
+            if i > count - batch_size:
+                num = count - i
+            else:
+                num = batch_size
+            items = await cls.get_mock_instances(count=num, force_id=idx+i+1)
+            await cls.upsert_many(items=items)
 
     @classmethod
     async def seed_one(cls) -> Self:
@@ -268,25 +269,25 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
 
 
     @classmethod
-    async def read_all_sql(
+    @lru_cache()
+    def read_all_sql(
         cls,
         offset: int = None,
         limit: int = None,
     ) -> str:
-        async with DatabaseService.async_session() as session:
-            q = select(cls.get_model_class())
+        q = select(cls.get_model_class())
 
-            if offset is not None:
-                q = q.offset(offset)
-            if limit is not None:
-                q = q.limit(limit)
+        if offset is not None:
+            q = q.offset(offset)
+        if limit is not None:
+            q = q.limit(limit)
 
-            return str(
-                q.compile(
-                    dialect=session.bind.dialect,
-                    compile_kwargs={"literal_binds": True},
-                )
+        return str(
+            q.compile(
+                dialect=dialect(),
+                compile_kwargs={"literal_binds": True},
             )
+        )
 
 
     @classmethod
