@@ -3,6 +3,9 @@ import time
 
 from fastapi import status
 import polars as pl
+from numba import njit
+import numpy as np
+import numpy.typing as npt
 
 from src.logging.service import logger
 from src.config import DATABASE_URL
@@ -27,6 +30,15 @@ RouteClass = generate_route_class(
 router = RouteClass()
 
 
+def custom_calc(vals: pl.Series) -> pl.Series:
+    return vals * 2
+
+
+@njit()
+def custom_calc_nb(vals: npt.ArrayLike) -> npt.ArrayLike:
+    return vals * 2
+
+
 @(router.router).get(
     'sandbox/',
     response_model=Dict,
@@ -45,6 +57,26 @@ async def sandbox() -> Dict:
     print(type(df))
     print(df.shape)
     print(df.head(5))
+    print(df.columns)
+
+    df2 = df.select(
+        [
+            'id',
+            'mv',
+            'q',
+        ]
+    ).with_columns(
+        [
+            (custom_calc(pl.col('mv'))).alias('mv2'),
+            (pl.col('mv') / pl.col('q')).alias('pth'),
+        ]
+    ).with_columns(
+        [
+            (pl.col('pth') * 2).alias('pth2'),
+        ]
+    )
+
+    print(df2.head(5))
 
     return {
         'message': 'Sandbox tasks enqueued.',

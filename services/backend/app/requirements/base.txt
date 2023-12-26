@@ -15,3 +15,5 @@ faker
 pyarrow
 connectorx
 polars
+numpy
+numba
