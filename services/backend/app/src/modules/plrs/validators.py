@@ -14,14 +14,14 @@ from src.validators import (
 
 class TradeBase(BaseModel):
     identifier:   str    = Field(description='Some unique reference', examples=['978-0-618-68000-9', '978-3-16-148410-0'])
-    instrument_id: float = Field(float)
-    timestamp: datetime  = Field(datetime)
-    mv: float            = Field(float)
-    q: float             = Field(float)
-    p: float             = Field(float)
-    mv_local: float      = Field(float)
-    q_local: float       = Field(float)
-    p_local: float       = Field(float)
+    instrument_id: float = Field()
+    timestamp: datetime  = Field()
+    mv: float            = Field()
+    q: float             = Field()
+    p: float             = Field()
+    mv_local: float      = Field()
+    q_local: float       = Field()
+    p_local: float       = Field()
 
 
 model_config_base = ConfigDict(
@@ -73,15 +73,15 @@ class TradeGet(ReadValidator, TradeBase):
 
 
 class TradeUpdateBase(BaseModel):
-    identifier: Optional[str]     = Field(str)
-    instrument_id: Optional[int]  = Field(int)
-    timestamp: Optional[datetime] = Field(datetime)
-    mv: Optional[float]           = Field(float)
-    q: Optional[float]            = Field(float)
-    p: Optional[float]            = Field(float)
-    mv_local: Optional[float]     = Field(float)
-    q_local: Optional[float]      = Field(float)
-    p_local: Optional[float]      = Field(float)
+    identifier: Optional[str]     = Field()
+    instrument_id: Optional[int]  = Field()
+    timestamp: Optional[datetime] = Field()
+    mv: Optional[float]           = Field()
+    q: Optional[float]            = Field()
+    p: Optional[float]            = Field()
+    mv_local: Optional[float]     = Field()
+    q_local: Optional[float]      = Field()
+    p_local: Optional[float]      = Field()
 
     model_config = model_config_base
 
