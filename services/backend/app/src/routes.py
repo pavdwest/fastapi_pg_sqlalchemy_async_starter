@@ -265,7 +265,7 @@ def generate_route_class(
         # Sum all release years
         s = time.monotonic()
         # ry = sum([item.release_year for item in res])
-        ry = sum([ReadValidatorClass.model_validate(item).release_year for item in res])
+        ry = sum([ReadValidatorClass.model_validate(item).id for item in res])
         # ry = sum([ReadValidatorClass.model_construct(**item.to_dict()).release_year for item in res])
 
         logger.warning(f"Calc: res={ry} took {time.monotonic() - s}")
