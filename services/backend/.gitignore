@@ -16,3 +16,6 @@ app/.ignore/*
 # Byte-compiled / optimized / DLL files
 **/__pycache__/
 **/*.py[cod]
+
+# Rust Maturin build artifacts
+**/target/release
