@@ -5,12 +5,14 @@ from src.modules.book.routes import router as book_router
 from src.modules.critic.routes import router as critic_router
 from src.modules.review.routes import router as review_router
 from src.modules.arqueue.routes import router as arqueue_router
+from src.modules.tax.routes import router as tax_router
 
 
 def register_routes(app: FastAPI):
     # Naked routes
     app.include_router(home_router)
     app.include_router(arqueue_router)
+    app.include_router(tax_router)
 
     # Controller routes
     app.include_router(book_router.router)
