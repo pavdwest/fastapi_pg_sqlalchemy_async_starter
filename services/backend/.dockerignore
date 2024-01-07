@@ -3,6 +3,10 @@
 .gitignore
 .gitattributes
 
+# .ignore
+**/.ignore/*
+!**/.ignore/.dirkeep
+
 # Virtual environment
 .venv/
 venv/
