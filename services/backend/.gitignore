@@ -1,5 +1,18 @@
-.venv
-__pycache__
+# Virtual environment
+.venv/
+venv/
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.py[cod]
+
+# Logs
 logs
+
+# Ensure that there is always a .dirkeep file in the .ignore directory
 app/.ignore/*
 !app/.ignore/.dirkeep
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.py[cod]
