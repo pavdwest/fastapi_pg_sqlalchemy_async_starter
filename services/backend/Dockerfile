@@ -13,5 +13,5 @@ RUN python3 -m venv /opt/venv
 COPY ./app/requirements /backend/app/requirements
 RUN pip install --no-cache-dir --upgrade pip -r /backend/app/requirements/base.txt
 
-# Everything else
+# Everything else - not actually required because of volume mount, but doesn't hurt
 COPY ./app /backend/app

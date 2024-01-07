@@ -1,19 +1,20 @@
-# Git
-.git
-.gitignore
-.gitattributes
+## Has no effect as the volume is mounted from the host
+# # Git
+# .git
+# .gitignore
+# .gitattributes
 
-# .ignore
-**/.ignore/*
-!**/.ignore/.dirkeep
+# # .ignore
+# **/.ignore/*
+# !**/.ignore/.dirkeep
 
-# Virtual environment
-.venv/
-venv/
+# # Virtual environment
+# .venv/
+# venv/
 
-# Logs
-logs
+# # Logs
+# logs
 
-# Byte-compiled / optimized / DLL files
-**/__pycache__/
-**/*.py[cod]
+# # Byte-compiled / optimized / DLL files
+# **/__pycache__/
+# **/*.py[cod]

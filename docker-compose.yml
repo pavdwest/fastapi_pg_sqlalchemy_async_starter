@@ -24,7 +24,7 @@ services:
     ports:
       - '6379:6379'
     volumes:
-      - "redis_data:/redis/data"
+      - redis_data:/redis/data
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -47,7 +47,7 @@ services:
     ports:
       - '8000:8000'
     environment:
-      - WATCHFILES_FORCE_POLLING=true
+      - PYTHONBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
       - PROJECT_NAME=Project
       - DATABASE_HOST=db
@@ -58,6 +58,11 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     command: uvicorn src.main:app --host=0.0.0.0 --port=8000 --reload --log-level 'debug'
+    volumes:
+      # Mount local folder contents to container
+      - ./services/backend/app:/backend/app
+      # Disable /backend/app/.ignore
+      - /backend/app/.ignore
 
   worker:
     depends_on:
@@ -67,7 +72,7 @@ services:
     working_dir: /backend/app
     restart: always
     environment:
-      - WATCHFILES_FORCE_POLLING=true
+      - PYTHONBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
       - PROJECT_NAME=Project
       - DATABASE_HOST=db
@@ -80,6 +85,11 @@ services:
     command: arq src.modules.arqueue.worker.ArqueueWorkerSettings
     deploy:
       replicas: 1
+    volumes:
+      # Mount local folder contents to container
+      - ./services/backend/app:/backend/app
+      # Disable /backend/app/.ignore
+      - /backend/app/.ignore
 
 volumes:
   postgres_data:
