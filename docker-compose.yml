@@ -16,8 +16,6 @@ services:
     ports:
       # Expose on different port to prevent conflict with local
       - '6543:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
 
   redis:
     image: redis:alpine
@@ -34,8 +32,6 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@project.com
       PGADMIN_DEFAULT_PASSWORD: admin
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
 
   backend:
     depends_on:
@@ -58,9 +54,6 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     command: uvicorn src.main:app --host=0.0.0.0 --port=8000 --reload --log-level 'debug'
-    volumes:
-      - ./services/backend/app:/backend/app
-      - /backend/app/.ignore
 
   worker:
     depends_on:
@@ -81,16 +74,5 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     command: arq src.modules.arqueue.worker.ArqueueWorkerSettings
-    volumes:
-      - ./services/backend/app:/backend/app
-      - /backend/app/.ignore
     deploy:
       replicas: 1
-
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  pgadmin_data:
-    driver: local
