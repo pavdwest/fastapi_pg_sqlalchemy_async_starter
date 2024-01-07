@@ -81,10 +81,10 @@ services:
     deploy:
       replicas: 1
 
-  volumes:
-    postgres_data:
-      driver: local
-    redis_data:
-      driver: local
-    pgadmin_data:
-      driver: local
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
