@@ -19,3 +19,4 @@ app/.ignore/*
 
 # Rust Maturin build artifacts
 **/target/release
+**/target/debug
