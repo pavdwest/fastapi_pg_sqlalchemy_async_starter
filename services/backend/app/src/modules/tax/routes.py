@@ -55,10 +55,12 @@ def nb_is_prime(n) -> int:
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def dbtest() -> Dict:
+    start = time.monotonic()
     res = pgtc(DATABASE_URL)
     return {
-        'message': 'Sandbox tasks enqueued.',
+        'message': 'DB test complete.',
         'result': res,
+        'duration': time.monotonic() - start,
     }
 
 @router.get(
