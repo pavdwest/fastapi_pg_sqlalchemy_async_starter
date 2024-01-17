@@ -4,10 +4,12 @@ from functools import lru_cache
 from typing import Any, Dict, List, Optional, Type, Tuple
 from typing_extensions import Self
 from datetime import datetime
+import uuid
 
 from sqlalchemy import BigInteger, Insert, text, UniqueConstraint
 from sqlalchemy import select, delete, update, insert
 from sqlalchemy.dialects.postgresql import insert as upsert
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import func
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import (
@@ -19,6 +21,7 @@ from sqlalchemy_utils import get_class_by_table
 from inflection import titleize, pluralize, underscore, camelize
 
 from src.logging.service import logger
+from src.config import SHARED_SCHEMA_NAME, TENANT_SCHEMA_NAME
 from src.utils import ToDictMixin
 from src.database.service import DatabaseService
 from src.validators import AppValidator
@@ -85,12 +88,24 @@ class IdentifierMixin:
             return res.scalars().first()
 
 
+class GUIDMixin:
+    guid: Mapped[uuid.uuid4] = mapped_column(UUID(as_uuid=True), default=uuid.uuid4, unique=True)
+
+
 class NameMixin:
     name: Mapped[Optional[str]] = mapped_column(nullable=True)
 
 
 class DescriptionMixin:
     name: Mapped[Optional[str]] = mapped_column(nullable=True)
+
+
+class SharedModelMixin:
+    __table_args__ = { 'schema': SHARED_SCHEMA_NAME }
+
+
+class TenantModelMixin:
+    __table_args__ = { 'schema': TENANT_SCHEMA_NAME }
 
 
 class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):

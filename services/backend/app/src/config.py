@@ -24,3 +24,13 @@ READ_ALL_LIMIT_MAX: int       = int(os.environ.get('GET_ITEM_COUNT_MAX', 200))
 # Redis
 REDIS_HOST: str               = os.environ.get('REDIS_HOST')
 REDIS_PORT: str               = os.environ.get('REDIS_PORT')
+
+# Auth
+JWT_SECRET_KEY         = os.environ['JWT_SECRET_KEY']
+JWT_REFRESH_SECRET_KEY = os.environ['JWT_REFRESH_SECRET_KEY']
+ACCESS_TOKEN_EXPIRE_MINUTES  = 30
+REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+
+# Multi-tenant
+SHARED_SCHEMA_NAME: str = 'shared'
+TENANT_SCHEMA_NAME: str = 'tenant'

@@ -5,10 +5,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.database.service import DatabaseService
-from src.models import AppModel, NameMixin
+from src.models import TenantModelMixin, AppModel, NameMixin
 
 
-class Critic(AppModel, NameMixin):
+class Critic(TenantModelMixin, AppModel, NameMixin):
     username: Mapped[str] = mapped_column(unique=True)
     bio: Mapped[Optional[str]] = mapped_column()
 

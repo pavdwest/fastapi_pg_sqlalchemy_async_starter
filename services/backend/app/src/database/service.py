@@ -6,6 +6,11 @@ from functools import lru_cache
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
+from sqlalchemy import (
+    create_engine,
+    text,
+)
+from sqlalchemy.schema import CreateSchema
 
 from src.logging.service import logger
 from src.config import (
@@ -13,6 +18,8 @@ from src.config import (
     DATABASE_NAME,
     DATABASE_URL_SYNC,
     DATABASE_URL_ASYNC,
+    SHARED_SCHEMA_NAME,
+    TENANT_SCHEMA_NAME,
 )
 
 
@@ -43,8 +50,17 @@ class DatabaseService:
         )
 
     @classmethod
+    def get_schema_context(cls, schema_name: str = SHARED_SCHEMA_NAME) -> None:
+        options = {}
+        if schema_name == SHARED_SCHEMA_NAME:
+            options['schema_translate_map'] = { 'tenant': None }
+        else:
+            options['schema_translate_map'] = { 'tenant': schema_name, 'shared': None }
+        return options
+
+    @classmethod
     @asynccontextmanager
-    async def async_session(cls) -> AsyncSession:
+    async def async_session(cls, schema_name: str = SHARED_SCHEMA_NAME) -> AsyncSession:
         """Async Context Manager to create a session with a specific schema context that auto commits.
         Will lazy init db service if not already done.
 
@@ -58,7 +74,7 @@ class DatabaseService:
             Iterator[AsyncSession]: Async Session with the schema context set.
         """
         session = cls.get()._async_session_maker()
-        # session.expire_on_commit = False
+        await session.connection(execution_options=cls.get_schema_context(schema_name))
 
         try:
             yield session
@@ -74,6 +90,10 @@ class DatabaseService:
         if not database_exists(url=DATABASE_URL_SYNC):
             logger.warning(f"Creating database: {DATABASE_NAME}...")
             create_database(url=DATABASE_URL_SYNC)
+            logger.warning('Creating default schemas...')
+            cls.create_schema(SHARED_SCHEMA_NAME)
+            cls.create_schema(TENANT_SCHEMA_NAME)
+            logger.warning('Default schemas created.')
             logger.warning('Running migrations as database was just created...')
             cls.run_migrations()
 
@@ -84,6 +104,58 @@ class DatabaseService:
                 logger.warning('Database created.')
         else:
             logger.info(f"Database '{DATABASE_HOST}/{DATABASE_NAME}' already exists. Nothing to do.")
+
+    @classmethod
+    def create_schema(cls, schema_name: str) -> None:
+        """
+        Creates a new blank schema with the provided name, which can then be accessed as e.g.
+
+        ```
+        select * from 'schema_name'.some_table
+        ```
+
+        Args:
+            schema_name (str): Schema name
+        """
+        sync_engine = create_engine(DATABASE_URL_SYNC)
+        with sync_engine.begin() as conn:
+            if not conn.dialect.has_schema(conn, schema_name):
+                logger.warning(f"Creating schema: '{schema_name}'...")
+                conn.execute(CreateSchema(schema_name))
+                if not conn.dialect.has_schema(conn, schema_name):
+                    logger.error(f"Could not create schema: '{schema_name}'.")
+            else:
+                logger.info(f"Schema '{schema_name}' already exists.")
+
+        sync_engine.dispose()
+
+    @classmethod
+    def clone_db_schema(cls, source_schema_name: str, target_schema_name: str) -> None:
+        """
+        Clones the table definitions from one schema to another.
+        If a table already exists in the target_schema, it will skip it.
+        Does not clone any data. Idempotent.
+
+        Args:
+            source_schema_name (str): Schema to clone
+            target_schema_name (str): Schema to clone into. Must exist already.
+        """
+        sync_engine = create_engine(DATABASE_URL_SYNC)
+        with sync_engine.begin() as conn:
+            logger.warning(f"Cloning schema '{source_schema_name}' to '{target_schema_name}...")
+
+            # Get all tables in schema
+            sql_schema_tables = "select * from information_schema.tables where table_schema = 'tenant'"
+            schema_tables = [r['table_name'] for r in conn.execute(text(sql_schema_tables)).mappings().all()]
+
+            # Clone tables one for one
+            for table_name in schema_tables:
+                logger.warning(f"Cloning {source_schema_name}.{table_name} to {target_schema_name}.{table_name}...")
+                sql_clone = f"create table if not exists {target_schema_name}.{table_name} (like {source_schema_name}.{table_name} including all)"
+                clone_res = conn.execute(text(sql_clone))
+
+        logger.warning("Schema cloned.")
+        sync_engine.dispose()
 
     # TODO: Do properly online with alembic
     @classmethod

@@ -4,12 +4,12 @@ from typing_extensions import Self
 from sqlalchemy import ForeignKey, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.models import AppModel, generate_unique_constraint
+from src.models import TenantModelMixin, AppModel, generate_unique_constraint
 from src.modules.critic.models import Critic
 from src.modules.book.models import Book
 
 
-class Review(AppModel):
+class Review(TenantModelMixin, AppModel):
     title:     Mapped[str]           = mapped_column()
     critic_id: Mapped[int]           = mapped_column(BigInteger, ForeignKey(Critic.id))
     book_id:   Mapped[int]           = mapped_column(BigInteger, ForeignKey(Book.id))

@@ -3,10 +3,10 @@ from typing_extensions import Self
 
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.models import AppModel, IdentifierMixin, NameMixin
+from src.models import TenantModelMixin, AppModel, IdentifierMixin, NameMixin
 
 
-class Book(AppModel, IdentifierMixin, NameMixin):
+class Book(TenantModelMixin, AppModel, IdentifierMixin, NameMixin):
     author: Mapped[str] = mapped_column()
     release_year: Mapped[Optional[int]] = mapped_column(nullable=True)
 

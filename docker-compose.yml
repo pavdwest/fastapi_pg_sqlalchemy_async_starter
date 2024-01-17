@@ -57,6 +57,8 @@ services:
       - DATABASE_NAME=project_database
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - JWT_SECRET_KEY=super_secret_key
+      - JWT_REFRESH_SECRET_KEY=super_secret_refresh_key
     command: uvicorn src.main:app --host=0.0.0.0 --port=8000 --reload --log-level 'debug'
     volumes:
       # Mount local folder contents to container
