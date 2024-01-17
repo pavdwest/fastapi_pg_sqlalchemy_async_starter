@@ -251,7 +251,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
         offset: int = None,
         limit: int = None,
     ) -> List[Self]:
-        async with DatabaseService.async_session() as session:
+        async with DatabaseService.async_session(schema_name='tenant') as session:
             q = select(cls.get_model_class())
 
             if offset is not None:

@@ -2,7 +2,11 @@ from typing import Optional
 from typing_extensions import Self
 
 from sqlalchemy import ForeignKey, BigInteger
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 from src.models import TenantModelMixin, AppModel, generate_unique_constraint
 from src.modules.critic.models import Critic
@@ -12,7 +16,9 @@ from src.modules.book.models import Book
 class Review(TenantModelMixin, AppModel):
     title:     Mapped[str]           = mapped_column()
     critic_id: Mapped[int]           = mapped_column(BigInteger, ForeignKey(Critic.id))
+    # critic:    Mapped[Critic]        = relationship(back_populates='reviews')
     book_id:   Mapped[int]           = mapped_column(BigInteger, ForeignKey(Book.id))
+    # book:      Mapped[Book]          = relationship(back_populates='reviews')
     rating:    Mapped[int]           = mapped_column()
     body:      Mapped[Optional[str]] = mapped_column()
 
