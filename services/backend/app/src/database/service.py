@@ -1,8 +1,10 @@
 from __future__ import annotations
+from math import log
 import os
 from contextlib import asynccontextmanager
 from functools import lru_cache
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database, drop_database
@@ -14,6 +16,7 @@ from sqlalchemy.schema import CreateSchema
 
 from src.logging.service import logger
 from src.config import (
+    IN_MAINTENANCE,
     DATABASE_HOST,
     DATABASE_NAME,
     DATABASE_URL_SYNC,
@@ -73,6 +76,14 @@ class DatabaseService:
         Yields:
             Iterator[AsyncSession]: Async Session with the schema context set.
         """
+        if IN_MAINTENANCE:
+            logger.error("Request received during maintenance window.")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Service is currently under maintenance."
+            )
+
+        # Handle tenant switch
         session = cls.get()._async_session_maker()
         await session.connection(execution_options=cls.get_schema_context(schema_name))
 

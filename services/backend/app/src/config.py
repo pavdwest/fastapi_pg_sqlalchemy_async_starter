@@ -8,6 +8,9 @@ PROJECT_NAME = os.environ.get('PROJECT_NAME')
 # Project folders
 APP_SRC_FOLDER_ABS = os.path.dirname(os.path.realpath(__file__))
 
+# Maintenance
+IN_MAINTENANCE: int           = False
+
 # Database
 DATABASE_HOST: str            = os.environ.get('DATABASE_HOST')
 DATABASE_PORT: int            = os.environ.get('DATABASE_PORT')
@@ -26,10 +29,10 @@ REDIS_HOST: str               = os.environ.get('REDIS_HOST')
 REDIS_PORT: str               = os.environ.get('REDIS_PORT')
 
 # Auth
-JWT_SECRET_KEY         = os.environ['JWT_SECRET_KEY']
-JWT_REFRESH_SECRET_KEY = os.environ['JWT_REFRESH_SECRET_KEY']
-ACCESS_TOKEN_EXPIRE_MINUTES  = 30
-REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+JWT_SECRET_KEY                = os.environ['JWT_SECRET_KEY']
+JWT_REFRESH_SECRET_KEY        = os.environ['JWT_REFRESH_SECRET_KEY']
+ACCESS_TOKEN_EXPIRE_MINUTES   = 30
+REFRESH_TOKEN_EXPIRE_MINUTES  = 60 * 24 * 7  # 7 days
 
 # Multi-tenant
 SHARED_SCHEMA_NAME: str = 'shared'
