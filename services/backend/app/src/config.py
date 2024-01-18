@@ -3,10 +3,10 @@ import os
 
 
 # Project
-PROJECT_NAME = os.environ.get('PROJECT_NAME')
+PROJECT_NAME: str             = os.environ.get('PROJECT_NAME')
 
 # Project folders
-APP_SRC_FOLDER_ABS = os.path.dirname(os.path.realpath(__file__))
+APP_SRC_FOLDER_ABS: str       = os.path.dirname(os.path.realpath(__file__))
 
 # Maintenance
 IN_MAINTENANCE: int           = False
@@ -35,5 +35,5 @@ ACCESS_TOKEN_EXPIRE_MINUTES   = 30
 REFRESH_TOKEN_EXPIRE_MINUTES  = 60 * 24 * 7  # 7 days
 
 # Multi-tenant
-SHARED_SCHEMA_NAME: str = 'shared'
-TENANT_SCHEMA_NAME: str = 'tenant'
+SHARED_SCHEMA_NAME: str       = 'shared'
+TENANT_SCHEMA_NAME: str       = 'tenant'
