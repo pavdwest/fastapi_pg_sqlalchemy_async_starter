@@ -167,16 +167,17 @@ wtf_router = APIRouter(
     redirect_slashes=False,
 )
 
-# @wtf_router.get(
+# # Gives a 422 WTF
+# @(router_instance.router).get(
 #     '/protected_verified_route',
 #     summary='Protected',
 #     description='Endpoint description. Will use the docstring if not provided.',
 # )
 # async def protected_verified_route(
-#     current_login: Annotated[Login, Depends(get_current_login)]
+#     login: Login = Depends(get_current_login)
 # ) -> Dict:
 #     return {
-#         'message': f"Hi {current_login.identifier}, you have accessed the super secret route available only to logged-in users."
+#         'message': f"Hi {login.identifier}, you have accessed the super secret route available only to logged-in users."
 #     }
 
 
