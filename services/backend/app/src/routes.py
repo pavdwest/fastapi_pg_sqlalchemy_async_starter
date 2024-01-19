@@ -29,13 +29,21 @@ def generate_route_class(
     router = APIRouter(
         tags=[ModelClass.__tablename_friendly__],
         prefix=f"{ApiVersion.V1}/{ModelClass.__tablename__}",
+        redirect_slashes=False,
     )
-    klass.router = router
-    klass.ModelClass                 = ModelClass
-    klass.ReadValidatorClass         = ReadValidatorClass
-    klass.CreateValidatorClass       = CreateValidatorClass
-    klass.UpdateValidatorClass       = UpdateValidatorClass
-    klass.UpdateWithIdValidatorClass = UpdateWithIdValidatorClass
+    # klass.router = router
+    # klass.ModelClass                 = ModelClass
+    # klass.ReadValidatorClass         = ReadValidatorClass
+    # klass.CreateValidatorClass       = CreateValidatorClass
+    # klass.UpdateValidatorClass       = UpdateValidatorClass
+    # klass.UpdateWithIdValidatorClass = UpdateWithIdValidatorClass
+
+    setattr(klass, 'router',                     router)
+    setattr(klass, 'ModelClass',                 ModelClass)
+    setattr(klass, 'ReadValidatorClass',         ReadValidatorClass)
+    setattr(klass, 'CreateValidatorClass',       CreateValidatorClass)
+    setattr(klass, 'UpdateValidatorClass',       UpdateValidatorClass)
+    setattr(klass, 'UpdateWithIdValidatorClass', UpdateWithIdValidatorClass)
 
 
     # Endpoints
@@ -48,8 +56,12 @@ def generate_route_class(
     )
     async def create_one(item: CreateValidatorClass) -> ReadValidatorClass:
         try:
-            res = await ModelClass(**item.__dict__).save()
-            # We use model_construct to ignore validations as this data is coming from the db and already validated
+            # res = await ModelClass(**item.__dict__).save()
+            # # We use model_construct to ignore validations as this data is coming from the db and already validated
+            # return ReadValidatorClass.model_construct(**res.to_dict())
+
+            # Using new creat_one
+            res = await ModelClass.create_one(item)
             return ReadValidatorClass.model_construct(**res.to_dict())
         except Exception as e:
             handle_exception(e)

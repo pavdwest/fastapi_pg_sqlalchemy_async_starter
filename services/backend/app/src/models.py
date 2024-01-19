@@ -1,7 +1,7 @@
 from __future__ import annotations
 import asyncio
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Type, Tuple
+from typing import Any, Dict, List, Optional, Type, Tuple, Union
 from typing_extensions import Self
 from datetime import datetime
 import uuid
@@ -58,8 +58,12 @@ class IdMixin:
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
 
     @classmethod
-    async def read_by_id(cls, id: int) -> Self:
-        async with DatabaseService.async_session() as session:
+    async def read_by_id(
+        cls,
+        id: int,
+        schema_name = SHARED_SCHEMA_NAME,
+    ) -> Union[None, Self]:
+        async with DatabaseService.async_session(schema_name) as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
             res = await session.execute(q)
             return res.scalars().first()
@@ -81,8 +85,12 @@ class IdentifierMixin:
     identifier: Mapped[str] = mapped_column(unique=True)
 
     @classmethod
-    async def read_by_identifier(cls, identifier: str) -> Self:
-        async with DatabaseService.async_session() as session:
+    async def read_by_identifier(
+        cls,
+        identifier: str,
+        schema_name = SHARED_SCHEMA_NAME,
+    ) -> Self:
+        async with DatabaseService.async_session(schema_name) as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().identifier == identifier)
             res = await session.execute(q)
             return res.scalars().first()
@@ -190,7 +198,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
     @classmethod
     async def init_orm(cls):
         pass
-        # async with DatabaseService.async_session() as conn:
+        # async with DatabaseService.async_session(schema_name) as conn:
         #     # logger.warning("Creating tables...")
         #     # await conn.run_sync(cls.metaitem.drop_all)
         #     # await conn.run_sync(cls.metaitem.create_all)
@@ -231,27 +239,51 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
         return await cls.get_mock_instance(idx=idx).save()
 
     @classmethod
-    async def get_max_id(cls) -> int:
-        async with DatabaseService.async_session() as session:
+    async def get_max_id(
+        cls,
+        schema_name = SHARED_SCHEMA_NAME,
+    ) -> int:
+        async with DatabaseService.async_session(schema_name) as session:
             q = select(func.max(cls.get_model_class().id))
             res = await session.execute(q)
             return res.scalar() or 0
 
     @classmethod
-    async def get_count(cls) -> int:
-        async with DatabaseService.async_session() as session:
+    async def get_count(
+        cls,
+        schema_name = SHARED_SCHEMA_NAME,
+    ) -> int:
+        async with DatabaseService.async_session(schema_name) as session:
             q = select(func.count(cls.get_model_class().id))
             res = await session.execute(q)
             return res.scalar()
+
+    # TODO: Find best way to do List[Self]
+    @classmethod
+    async def create_one(
+        cls,
+        item: AppValidator | Dict,
+        schema_name = SHARED_SCHEMA_NAME,
+    ) -> Self:
+        async with DatabaseService.async_session(schema_name) as session:
+            q = insert(cls.get_model_class()).returning(cls.get_model_class().id)
+            res = await session.execute(q, item if isinstance(item, dict) else item.to_dict())
+            await session.commit()
+            items = res.scalars().all()
+            if len(items) > 0:
+                return await cls.read_by_id(items[0])
+            else:
+                return None
 
     # TODO: Add metadata to the response
     @classmethod
     async def read_all(
         cls,
+        schema_name = SHARED_SCHEMA_NAME,
         offset: int = None,
         limit: int = None,
     ) -> List[Self]:
-        async with DatabaseService.async_session(schema_name='tenant') as session:
+        async with DatabaseService.async_session(schema_name) as session:
             q = select(cls.get_model_class())
 
             if offset is not None:
@@ -273,36 +305,42 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             return all
 
     @classmethod
-    async def popo_read_all(cls) -> List[Dict]:
+    async def popo_read_all(cls, schema_name = SHARED_SCHEMA_NAME) -> List[Dict]:
         """Gets all objects from the database as plain old python objects.
 
         Returns:
             List[Dict]: List of dicts composed of plain old python objects
         """
-        async with DatabaseService.async_session() as session:
+        async with DatabaseService.async_session(schema_name) as session:
             q = select(cls.get_model_class())
             res = await session.execute(text(str(q)))
             # return [row for row in res]
             return res
 
     @classmethod
-    async def delete_by_id(cls, id: int) -> int:
-        async with DatabaseService.async_session() as session:
+    async def delete_by_id(cls, id: int, schema_name = SHARED_SCHEMA_NAME) -> int:
+        async with DatabaseService.async_session(schema_name) as session:
             q = delete(cls.get_model_class()).where(cls.get_model_class().id == id)
             await session.execute(q)
             return id
 
     @classmethod
-    async def delete_all(cls) -> List[int]:
-        async with DatabaseService.async_session() as session:
+    async def delete_all(cls, schema_name = SHARED_SCHEMA_NAME,) -> List[int]:
+        async with DatabaseService.async_session(schema_name) as session:
             q = delete(cls.get_model_class()).returning(cls.get_model_class().id)
             res = await session.execute(q)
             await session.commit()
             return res.scalars().all()
 
     @classmethod
-    async def update_by_id(cls, id: int, item: AppValidator, apply_none_values: bool = False) -> Self:
-        async with DatabaseService.async_session() as session:
+    async def update_by_id(
+        cls,
+        id: int,
+        item: AppValidator,
+        schema_name = SHARED_SCHEMA_NAME,
+        apply_none_values: bool = False,
+    ) -> Self:
+        async with DatabaseService.async_session(schema_name) as session:
             q = update(cls.get_model_class())
             await session.execute(
                 q,
@@ -318,8 +356,12 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
 
     # TODO: Find best way to do List[Self]
     @classmethod
-    async def create_many(cls, items: List[AppValidator] | List[Self]) -> List[int]:
-        async with DatabaseService.async_session() as session:
+    async def create_many(
+        cls,
+        items: List[AppValidator] | List[Self],
+        schema_name = SHARED_SCHEMA_NAME,
+    ) -> List[int]:
+        async with DatabaseService.async_session(schema_name) as session:
             q = insert(cls.get_model_class()).returning(cls.get_model_class().id)
             res = await session.execute(q, [d.to_dict() for d in items])
             await session.commit()
@@ -348,8 +390,13 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
         return { f: q.excluded[f] for f in cls.get_on_conflict_fields() }
 
     @classmethod
-    async def upsert(cls, item: AppValidator, apply_none_values: bool = False) -> Self:
-        async with DatabaseService.async_session() as session:
+    async def upsert(
+        cls,
+        item: AppValidator,
+        schema_name = SHARED_SCHEMA_NAME,
+        apply_none_values: bool = False
+    ) -> Self:
+        async with DatabaseService.async_session(schema_name) as session:
             q = upsert(cls.get_model_class())
 
             ucn = cls.get_unique_constraint_names()
@@ -373,8 +420,13 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             return await cls.read_by_id(id=res.scalar())
 
     @classmethod
-    async def upsert_many(cls, items: List[AppValidator], apply_none_values: bool = False) -> List[int]:
-        async with DatabaseService.async_session() as session:
+    async def upsert_many(
+        cls,
+        items: List[AppValidator],
+        schema_name = SHARED_SCHEMA_NAME,
+        apply_none_values: bool = False,
+    ) -> List[int]:
+        async with DatabaseService.async_session(schema_name) as session:
             q = upsert(cls.get_model_class())
 
             ucn = cls.get_unique_constraint_names()
@@ -398,7 +450,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             await session.commit()
             return res.scalars().all()
 
-    async def save(self) -> Self:
-        async with DatabaseService.async_session() as session:
+    async def save(self, schema_name: str = SHARED_SCHEMA_NAME) -> Self:
+        async with DatabaseService.async_session(schema_name) as session:
             session.add(self)
             return self

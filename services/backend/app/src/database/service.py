@@ -1,5 +1,4 @@
 from __future__ import annotations
-from math import log
 import os
 from contextlib import asynccontextmanager
 from functools import lru_cache
@@ -119,10 +118,11 @@ class DatabaseService:
     @classmethod
     def create_schema(cls, schema_name: str) -> None:
         """
-        Creates a new blank schema with the provided name, which can then be accessed as e.g.
+        Idempotent creation of a new blank schema with the provided name,
+        which can then be accessed as e.g.
 
         ```
-        select * from 'schema_name'.some_table
+        select * from schema_name.some_table
         ```
 
         Args:

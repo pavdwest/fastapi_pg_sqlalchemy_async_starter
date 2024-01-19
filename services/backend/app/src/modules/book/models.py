@@ -10,6 +10,7 @@ class Book(TenantModelMixin, AppModel, IdentifierMixin, NameMixin):
     author: Mapped[str] = mapped_column()
     release_year: Mapped[Optional[int]] = mapped_column(nullable=True)
 
+    # TODO: Remove async
     @classmethod
     async def get_mock_instance(cls, idx: int = None) -> Self:
         if idx is None:
@@ -17,9 +18,9 @@ class Book(TenantModelMixin, AppModel, IdentifierMixin, NameMixin):
 
         return cls(
             **{
-            'identifier': f"id_{idx}",
-            'name': f'Book: {idx}',
-            'author': f'Author: {idx}',
-            'release_year': idx % 1000 + 1000,
+                'identifier': f"id_{idx}",
+                'name': f'Book: {idx}',
+                'author': f'Author: {idx}',
+                'release_year': idx % 1000 + 1000,
             }
         )

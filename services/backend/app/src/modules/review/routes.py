@@ -15,4 +15,4 @@ RouteClass = generate_route_class(
     UpdateValidatorClass       = ReviewUpdate,
     UpdateWithIdValidatorClass = ReviewUpdateWithId,
 )
-router = RouteClass()
+router = RouteClass().router

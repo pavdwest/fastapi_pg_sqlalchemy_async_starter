@@ -15,4 +15,4 @@ RouteClass = generate_route_class(
     UpdateValidatorClass       = CriticUpdate,
     UpdateWithIdValidatorClass = CriticUpdateWithId,
 )
-router = RouteClass()
+router = RouteClass().router

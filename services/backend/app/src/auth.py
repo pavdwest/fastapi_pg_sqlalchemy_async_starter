@@ -11,6 +11,7 @@ from jose import jwt
 # from pydantic import ValidationError
 
 from src.config import JWT_SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES
+from src.versions import ApiVersion
 
 
 ALGORITHM = 'HS256'
@@ -77,6 +78,8 @@ def create_access_token(subject: Union[str, Any], expire_minutes: float = None) 
     Returns:
         str: valid token
     """
+    from src.logging.service import logger
+
     if expire_minutes is None:
         expire_minutes = ACCESS_TOKEN_EXPIRE_MINUTES
 
@@ -85,11 +88,11 @@ def create_access_token(subject: Union[str, Any], expire_minutes: float = None) 
         sub=str(subject),
         exp=token_expires
     )
-    encoded_jwt = encode_item(to_encode.dict())
+    encoded_jwt = encode_item(to_encode.model_dump())
     return encoded_jwt
 
 
 reuseable_oauth = OAuth2PasswordBearer(
-    tokenUrl='login/get_access_token',
-    scheme_name='JWT'
+    tokenUrl=f"{ApiVersion.V1}/login/get_access_token",
+    scheme_name='JWT',
 )

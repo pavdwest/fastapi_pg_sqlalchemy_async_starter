@@ -129,11 +129,11 @@ def do_run_migrations(connection: Connection) -> None:
                         }
                     )
                     print('Creating junk schema...')
-                    connection.execute(text(f"create schema if not exists '{junk_schema_name}'"))
+                    connection.execute(text(f"create schema if not exists {junk_schema_name}"))
                     print('Running actual migrations...')
                     context.run_migrations()
                     print('Deleting junk schema...')
-                    connection.execute(text(f"drop schema if exists '{junk_schema_name}' cascade"))
+                    connection.execute(text(f"drop schema if exists {junk_schema_name} cascade"))
                     post_rev = get_revision(connection=connection, schema='public')
                     print(f"Tenant migrated to revision '{post_rev}'.")
 

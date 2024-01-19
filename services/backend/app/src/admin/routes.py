@@ -4,13 +4,10 @@ from fastapi import APIRouter, status, Response
 
 from src.versions import ApiVersion
 
-from fastapi import Depends
-from typing import Annotated, Dict
-from src.login.models import Login, get_current_login, get_unverified_login
-
 
 router = APIRouter(
-    tags=['Home'],
+    tags=['Admin'],
+    prefix=f"{ApiVersion.V1}/admin",
 )
 
 
@@ -21,9 +18,7 @@ router = APIRouter(
     summary='Returns 200 if service is up and running',
     description='Endpoint description. Will use the docstring if not provided.',
 )
-async def home(
-    current_login: Annotated[Login, Depends(get_unverified_login)]
-    ) -> Dict:
+async def test(response: Response) -> Dict:
     """
     Home
 
@@ -35,6 +30,7 @@ async def home(
             'message': 'Hello boils and ghouls'
         }
     """
+    response.status_code = status.HTTP_200_OK
     return {
-        'message': 'Hello boils and ghouls'
+        'message': 'Admin Test'
     }
