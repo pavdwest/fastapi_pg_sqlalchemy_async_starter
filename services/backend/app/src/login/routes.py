@@ -180,6 +180,28 @@ wtf_router = APIRouter(
 #         'message': f"Hi {login.identifier}, you have accessed the super secret route available only to logged-in users."
 #     }
 
+@wtf_router.post(
+    '/verify_login',
+    summary='Verify login details via token sent to email.',
+    response_model=Dict,
+    status_code=status.HTTP_200_OK,
+    description='Verity that the provided email actually exists and activate the login for further features.'
+)
+async def verify_login(
+    verification_token: str,
+    login: Login = Depends(get_unverified_login)
+) -> Dict:
+    if verification_token == str(login.verification_token):
+        login.verified = True
+        await login.save()
+        return {
+            'message': 'Login details have been verified.'
+        }
+    else:
+        return {
+            'message': 'Incorrect verification token.'
+        }
+
 
 @wtf_router.get(
     '/protected_unverified_route',
