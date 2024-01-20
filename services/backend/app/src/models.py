@@ -265,15 +265,19 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
         item: AppValidator | Dict,
         schema_name = SHARED_SCHEMA_NAME,
     ) -> Self:
+        id = None
         async with DatabaseService.async_session(schema_name) as session:
             q = insert(cls.get_model_class()).returning(cls.get_model_class().id)
             res = await session.execute(q, item if isinstance(item, dict) else item.to_dict())
             await session.commit()
             items = res.scalars().all()
             if len(items) > 0:
-                return await cls.read_by_id(items[0])
-            else:
-                return None
+                id = items[0]
+
+        if id is not None:
+            return await cls.read_by_id(id, schema_name=schema_name)
+        else:
+            return None
 
     # TODO: Add metadata to the response
     @classmethod

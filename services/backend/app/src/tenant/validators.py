@@ -36,6 +36,7 @@ class TenantCreate(CreateValidator, TenantBase):
 
 class TenantGet(ReadValidator, TenantBase):
     id:           int           = Field(examples=[127, 667])
+    schema_name:  str           = Field(title='Schema Name', description='The name of the schema that this tenant is using', examples=['important_bank_1', 'cryptolord69420'])
     created_at:   datetime      = Field(title='Created At', description='UTC Timestamp of record creation', examples=[some_earlier_datetime, some_datetime])
     updated_at:   datetime      = Field(title='Updated At', description='The last time this record was updated (UTC)', examples=[some_earlier_datetime, some_datetime])
 

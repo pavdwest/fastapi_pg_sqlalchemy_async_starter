@@ -1,12 +1,6 @@
 from typing import Dict
 
-from fastapi import APIRouter, status, Response
-
-from src.versions import ApiVersion
-
-from fastapi import Depends
-from typing import Annotated, Dict
-from src.login.models import Login, get_current_login, get_unverified_login
+from fastapi import APIRouter, status
 
 
 router = APIRouter(
@@ -22,7 +16,6 @@ router = APIRouter(
     description='Endpoint description. Will use the docstring if not provided.',
 )
 async def home(
-    current_login: Annotated[Login, Depends(get_unverified_login)]
     ) -> Dict:
     """
     Home

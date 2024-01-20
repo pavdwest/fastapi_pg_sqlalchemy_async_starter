@@ -1,13 +1,21 @@
 from typing import Type, List, Dict
 
-from fastapi import APIRouter, status, HTTPException, Query
+from fastapi import (
+    APIRouter,
+    status,
+    HTTPException,
+    Query,
+    Depends,
+)
+from httpx import get
 from inflection import pluralize
 
 from src.logging.service import logger
 from src.config import READ_ALL_LIMIT_DEFAULT, READ_ALL_LIMIT_MAX
 from src.versions import ApiVersion
 from src.database.exceptions import handle_exception
-from src.models import AppModel
+from src.models import AppModel, SharedModelMixin, TenantModelMixin
+from src.login.models import Login, get_current_login, get_unverified_login
 from src.validators import Bulk
 from src.validators import (
     ReadValidator,
@@ -46,6 +54,20 @@ def generate_route_class(
     setattr(klass, 'UpdateWithIdValidatorClass', UpdateWithIdValidatorClass)
 
 
+    def get_extra_params(login: Login = None) -> Dict:
+        if issubclass(ModelClass, TenantModelMixin):
+            return {
+                'schema_name': 'tenant_659ae7b0_0f5b_4de8_8802_1a349e0b9761'
+            }
+        elif issubclass(ModelClass, SharedModelMixin):
+            return {
+                'schema_name': 'shared'
+            }
+        else:
+            return {}
+    setattr(klass, 'get_extra_params',           get_extra_params)
+
+
     # Endpoints
     @router.post(
         '',
@@ -54,14 +76,15 @@ def generate_route_class(
         summary=f"Create one {ModelClass.__name__} in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def create_one(item: CreateValidatorClass) -> ReadValidatorClass:
+    async def create_one(
+        item: CreateValidatorClass,
+        login: Login = Depends(get_current_login),
+    ) -> ReadValidatorClass:
         try:
-            # res = await ModelClass(**item.__dict__).save()
-            # # We use model_construct to ignore validations as this data is coming from the db and already validated
-            # return ReadValidatorClass.model_construct(**res.to_dict())
-
             # Using new creat_one
-            res = await ModelClass.create_one(item)
+            res = await ModelClass.create_one(item, **get_extra_params(login))
+
+            # We use model_construct to ignore validations as this data is coming from the db and already validated
             return ReadValidatorClass.model_construct(**res.to_dict())
         except Exception as e:
             handle_exception(e)
@@ -200,7 +223,7 @@ def generate_route_class(
         ),
     ) -> List[ReadValidatorClass]:
         limit = min(limit, READ_ALL_LIMIT_MAX)
-        return [ReadValidatorClass.model_construct(**item.to_dict()) for item in await ModelClass.read_all(offset=offset, limit=limit)]
+        return [ReadValidatorClass.model_construct(**item.to_dict()) for item in await ModelClass.read_all(**get_extra_params(), offset=offset, limit=limit)]
 
 
     @router.post(
