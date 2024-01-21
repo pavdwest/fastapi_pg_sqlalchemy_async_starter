@@ -30,7 +30,6 @@
 
 # @router.get(
 #     f"/get_all",
-#     response_model=List[TenantGet],
 #     status_code=status.HTTP_200_OK,
 #     summary=f"Get all instances of {model_class.__name__} stored in the database.",
 #     description='Endpoint description. Will use the docstring if not provided.',

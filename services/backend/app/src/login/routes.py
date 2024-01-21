@@ -28,7 +28,6 @@
 # @router.post(
 #     '/get_access_token',
 #     summary="Get access token by login email and password",
-#     response_model=TokenGet
 # )
 # async def get_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
 #     # Get login from form_data.username
@@ -57,7 +56,6 @@
 # @router.post(
 #     '/verify_login',
 #     summary='Verify login details via token sent to email.',
-#     response_model=Dict,
 #     status_code=status.HTTP_200_OK,
 #     description=f'Verity that the provided email actually exists and activate the login for further features.'
 # )
@@ -198,15 +196,6 @@ async def signup(
     # TODO: Send email with auth code
     logger.warning(f"New User Verification Token: {item_db.verification_token}")
 
-    # Create tenant for login - can separate later.
-    # For now each login gets its own tenancy
-    # Note that tenant schema name uniqueness is currently guaranteed
-    # by login identifier
-    tenant = await Tenant(identifier=item_db.identifier).save()
-    item_db.tenant_schema_name = tenant.schema_name
-    item_db = await item_db.save()
-    logger.warning(f"Schema name: {item_db.tenant_schema_name}")
-
     return LoginGet.model_construct(**item_db.to_dict())
 
 
@@ -220,16 +209,29 @@ async def verify_login(
     verification_token: str,
     login: Login = Depends(get_unverified_login)
 ) -> Dict:
-    if verification_token == str(login.verification_token):
-        login.verified = True
-        await login.save()
+    if login.verified:
         return {
-            'message': 'Login details successfully verified.'
+            'message': 'Login details already verified.'
         }
     else:
-        return {
-            'message': 'Could not validate login. Please contact support.'
-        }
+        if verification_token == str(login.verification_token):
+            # Create tenant for login - can separate later.
+            # For now each login gets its own tenancy. TODO:
+            # Note that tenant schema name uniqueness is currently guaranteed
+            # by login identifier
+            tenant = await Tenant(identifier=login.identifier).save()
+            login.tenant_schema_name = tenant.schema_name
+            login = await login.save()
+            logger.warning(f"Login {login.identifier} linked to schema name {login.tenant_schema_name}")
+            login.verified = True
+            await login.save()
+            return {
+                'message': 'Login details successfully verified.'
+            }
+        else:
+            return {
+                'message': 'Could not validate login. Please contact support.'
+            }
 
 
 @wtf_router.get(

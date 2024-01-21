@@ -220,7 +220,6 @@ def generate_route_class(
 
     @router.post(
         '/bulk',
-        response_model=Bulk,
         status_code=status.HTTP_200_OK,
         summary=f"Create multiple {pluralize(ModelClass.__name__)} in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
@@ -239,7 +238,6 @@ def generate_route_class(
 
     @router.put(
         '/bulk',
-        response_model=Bulk,
         status_code=status.HTTP_200_OK,
         summary=f"Create or update many {pluralize(ModelClass.__name__)} in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
@@ -258,7 +256,6 @@ def generate_route_class(
 
     @router.post(
         '/test/seed_data',
-        response_model=Dict,
         status_code=status.HTTP_200_OK,
         summary=f"Seed mock {pluralize(ModelClass.__name__)} in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
@@ -275,7 +272,6 @@ def generate_route_class(
 
     @router.get(
         '/test/retrieve_data',
-        response_model=Dict,
         status_code=status.HTTP_200_OK,
         summary=f"Retrieve {pluralize(ModelClass.__name__)} from the database.",
         description='Endpoint description. Will use the docstring if not provided.',
