@@ -72,3 +72,16 @@ class BookUpdate(UpdateValidator, BookUpdateBase):
 
 class BookUpdateWithId(UpdateWithIdValidator, BookUpdateBase):
     id:           int           = Field(examples=[127, 667])
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            'example': {
+                'id': 27,
+                'identifier': '978-3-16-148410-0',
+                'name': 'A Brief Horror Story of Time',
+                'author': 'Stephen Hawk King',
+                'release_year': 2035,
+            }
+        }
+    )

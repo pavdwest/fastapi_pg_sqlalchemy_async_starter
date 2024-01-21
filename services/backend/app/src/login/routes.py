@@ -220,11 +220,11 @@ async def verify_login(
             # Note that tenant schema name uniqueness is currently guaranteed
             # by login identifier
             tenant = await Tenant(identifier=login.identifier).save()
+            await tenant.provision()
             login.tenant_schema_name = tenant.schema_name
-            login = await login.save()
-            logger.warning(f"Login {login.identifier} linked to schema name {login.tenant_schema_name}")
             login.verified = True
             await login.save()
+            logger.warning(f"Login {login.identifier} linked to schema name {login.tenant_schema_name}")
             return {
                 'message': 'Login details successfully verified.'
             }

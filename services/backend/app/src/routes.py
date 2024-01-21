@@ -39,13 +39,8 @@ def generate_route_class(
         prefix=f"{ApiVersion.V1}/{ModelClass.__tablename__}",
         redirect_slashes=False,
     )
-    # klass.router = router
-    # klass.ModelClass                 = ModelClass
-    # klass.ReadValidatorClass         = ReadValidatorClass
-    # klass.CreateValidatorClass       = CreateValidatorClass
-    # klass.UpdateValidatorClass       = UpdateValidatorClass
-    # klass.UpdateWithIdValidatorClass = UpdateWithIdValidatorClass
 
+    # Link attributes to dynamic class
     setattr(klass, 'router',                     router)
     setattr(klass, 'ModelClass',                 ModelClass)
     setattr(klass, 'ReadValidatorClass',         ReadValidatorClass)
@@ -53,18 +48,18 @@ def generate_route_class(
     setattr(klass, 'UpdateValidatorClass',       UpdateValidatorClass)
     setattr(klass, 'UpdateWithIdValidatorClass', UpdateWithIdValidatorClass)
 
-
+    # Injects the login's tenant_schema_name
     def get_extra_params(login: Login = None) -> Dict:
+        if login is None:
+            return {}
         if issubclass(ModelClass, TenantModelMixin):
             return {
-                'schema_name': 'tenant_659ae7b0_0f5b_4de8_8802_1a349e0b9761'
+                'schema_name': login.tenant_schema_name
             }
         elif issubclass(ModelClass, SharedModelMixin):
             return {
                 'schema_name': 'shared'
             }
-        else:
-            return {}
     setattr(klass, 'get_extra_params',           get_extra_params)
 
 
@@ -95,8 +90,12 @@ def generate_route_class(
         summary=f"Update a specific {ModelClass.__name__} stored in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def update_one(id: int, item: UpdateValidatorClass) -> ReadValidatorClass:
-        db_item = await ModelClass.read_by_id(id=id)
+    async def update_one(
+        id: int,
+        item: UpdateValidatorClass,
+        login: Login = Depends(get_current_login),
+    ) -> ReadValidatorClass:
+        db_item = await ModelClass.read_by_id(id=id, **get_extra_params(login))
 
         if db_item is None:
             raise HTTPException(
@@ -104,7 +103,7 @@ def generate_route_class(
                 detail=f"Object with id={id} not found."
             )
 
-        res = await ModelClass.update_by_id(id=id, item=item)
+        res = await ModelClass.update_by_id(id=id, item=item, **get_extra_params(login))
         return ReadValidatorClass.model_construct(**res.to_dict())
 
 
@@ -114,8 +113,11 @@ def generate_route_class(
         summary=f"Update a specific {ModelClass.__name__} stored in the database (`id` included in the payload).",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def update_one_with_id(item: UpdateWithIdValidatorClass) -> ReadValidatorClass:
-        db_item = await ModelClass.read_by_id(id=item.id)
+    async def update_one_with_id(
+        item: UpdateWithIdValidatorClass,
+        login: Login = Depends(get_current_login),
+    ) -> ReadValidatorClass:
+        db_item = await ModelClass.read_by_id(id=item.id, **get_extra_params(login))
 
         if db_item is None:
             raise HTTPException(
@@ -123,7 +125,7 @@ def generate_route_class(
                 detail=f"Object with id={id} not found."
             )
 
-        res = await ModelClass.update_by_id(id=item.id, item=item)
+        res = await ModelClass.update_by_id(id=item.id, item=item, **get_extra_params(login))
         return ReadValidatorClass.model_construct(**res.to_dict())
 
 
@@ -133,9 +135,12 @@ def generate_route_class(
         summary=f"Create or update one {ModelClass.__name__} in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def upsert_one(item: CreateValidatorClass) -> ReadValidatorClass:
+    async def upsert_one(
+        item: CreateValidatorClass,
+        login: Login = Depends(get_current_login),
+    ) -> ReadValidatorClass:
         try:
-            res = await ModelClass.upsert(item=item)
+            res = await ModelClass.upsert(item=item, **get_extra_params(login))
             return ReadValidatorClass.model_construct(**res.to_dict())
         except Exception as e:
             handle_exception(e)
@@ -147,8 +152,11 @@ def generate_route_class(
         summary=f"Delete a specific {ModelClass.__name__} stored in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def delete_one(id: int) -> Bulk:
-        db_item = await ModelClass.read_by_id(id=id)
+    async def delete_one(
+        id: int,
+        login: Login = Depends(get_current_login),
+    ) -> Bulk:
+        db_item = await ModelClass.read_by_id(id=id, **get_extra_params(login))
 
         if db_item is None:
             raise HTTPException(
@@ -156,7 +164,7 @@ def generate_route_class(
                 detail=f"Object with id={id} not found."
             )
 
-        await ModelClass.delete_by_id(id=id)
+        await ModelClass.delete_by_id(id=id, **get_extra_params(login))
         return Bulk(
             message=f'Deleted one {ModelClass.__name__} from the database.',
             count=1,
@@ -170,8 +178,11 @@ def generate_route_class(
         summary=f"Get a {ModelClass.__name__} stored in the database by its ID.",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def read_by_id(id: int) -> ReadValidatorClass:
-        item = await ModelClass.read_by_id(id=id)
+    async def read_by_id(
+        id: int,
+        login: Login = Depends(get_current_login),
+    ) -> ReadValidatorClass:
+        item = await ModelClass.read_by_id(id=id, **get_extra_params(login))
 
         if item is None:
             raise HTTPException(
@@ -179,7 +190,7 @@ def generate_route_class(
                 detail=f"Object with id={id} not found."
             )
 
-        return ReadValidatorClass.model_construct(item.to_dict())
+        return ReadValidatorClass.model_construct(**item.to_dict())
 
 
     @router.delete(
@@ -188,8 +199,10 @@ def generate_route_class(
         summary=f"Delete all {pluralize(ModelClass.__name__)} stored in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def delete_all() -> Bulk:
-        res =  await ModelClass.delete_all()
+    async def delete_all(
+        login: Login = Depends(get_current_login),
+    ) -> Bulk:
+        res =  await ModelClass.delete_all(**get_extra_params(login))
         return Bulk(
             message=f'Deleted all {pluralize(ModelClass.__name__)} in the database.',
             count=len(res),
@@ -204,6 +217,7 @@ def generate_route_class(
         description='Endpoint description. Will use the docstring if not provided.',
     )
     async def read_all(
+        login: Login = Depends(get_current_login),
         offset: int = Query(
             default=0,
             ge=0,
@@ -215,7 +229,7 @@ def generate_route_class(
         ),
     ) -> List[ReadValidatorClass]:
         limit = min(limit, READ_ALL_LIMIT_MAX)
-        return [ReadValidatorClass.model_construct(**item.to_dict()) for item in await ModelClass.read_all(**get_extra_params(), offset=offset, limit=limit)]
+        return [ReadValidatorClass.model_construct(**item.to_dict()) for item in await ModelClass.read_all(**get_extra_params(login), offset=offset, limit=limit)]
 
 
     @router.post(
@@ -224,9 +238,12 @@ def generate_route_class(
         summary=f"Create multiple {pluralize(ModelClass.__name__)} in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def create_many(items: List[CreateValidatorClass]) -> Bulk:
+    async def create_many(
+        items: List[CreateValidatorClass],
+        login: Login = Depends(get_current_login),
+    ) -> Bulk:
         try:
-            res = await ModelClass.create_many(items=items)
+            res = await ModelClass.create_many(items=items, **get_extra_params(login))
             return Bulk(
                 message=f'Created multiple {pluralize(ModelClass.__name__)} in the database.',
                 count=len(res),
@@ -242,9 +259,12 @@ def generate_route_class(
         summary=f"Create or update many {pluralize(ModelClass.__name__)} in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def upsert_many(items: List[UpdateValidatorClass]) -> Bulk:
+    async def upsert_many(
+        items: List[UpdateValidatorClass],
+        login: Login = Depends(get_current_login),
+    ) -> Bulk:
         try:
-            res = await ModelClass.upsert_many(items=items, apply_none_values=False)
+            res = await ModelClass.upsert_many(items=items, apply_none_values=False, **get_extra_params(login))
             return Bulk(
                 message=f'Created or updated multiple {pluralize(ModelClass.__name__)} in the database.',
                 count=len(res),
@@ -260,10 +280,13 @@ def generate_route_class(
         summary=f"Seed mock {pluralize(ModelClass.__name__)} in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def seed_data(n: int = 100000) -> Dict:
+    async def seed_data(
+        n: int = 100000,
+        login: Login = Depends(get_current_login),
+    ) -> Dict:
         import time
         s = time.monotonic()
-        await ModelClass.seed_multiple(n)
+        await ModelClass.seed_multiple(n, **get_extra_params(login))
         logger.warning(f"Took: {time.monotonic() - s} seconds")
         return {
             'message': 'Done'
@@ -276,12 +299,14 @@ def generate_route_class(
         summary=f"Retrieve {pluralize(ModelClass.__name__)} from the database.",
         description='Endpoint description. Will use the docstring if not provided.',
     )
-    async def performance_test() -> Dict:
+    async def performance_test(
+        login: Login = Depends(get_current_login)
+    ) -> Dict:
         import time
 
         # Raw fetch
         s = time.monotonic()
-        res = await ModelClass.read_all()  # 10.190340717992513 for 1 mil, Calc: 0.4833592210052302
+        res = await ModelClass.read_all(**get_extra_params(login))  # 10.190340717992513 for 1 mil, Calc: 0.4833592210052302
         # res = await Book.popo_read_all() # 2.038523224997334 for 1 mil, Calc: 68.26654115399288
         logger.warning(f"Fetch: {time.monotonic() - s}")
 
@@ -297,7 +322,7 @@ def generate_route_class(
         }
 
 
-    # Link functions to class - not sure it's necessary but could be useful
+    # Link route functions to class
     setattr(klass, 'create_one',         create_one)
     setattr(klass, 'update_one',         update_one)
     setattr(klass, 'update_one_with_id', update_one_with_id)

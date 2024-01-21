@@ -3,6 +3,7 @@ from typing_extensions import Self
 
 from sqlalchemy.orm import Mapped, mapped_column
 
+from src.config import SHARED_SCHEMA_NAME
 from src.models import TenantModelMixin, AppModel, IdentifierMixin, NameMixin
 
 
@@ -12,9 +13,13 @@ class Book(TenantModelMixin, AppModel, IdentifierMixin, NameMixin):
 
     # TODO: Remove async
     @classmethod
-    async def get_mock_instance(cls, idx: int = None) -> Self:
+    async def get_mock_instance(
+        cls,
+        schema_name: str = SHARED_SCHEMA_NAME,
+        idx: int = None
+    ) -> Self:
         if idx is None:
-            idx = await cls.get_max_id() + 1
+            idx = await cls.get_max_id(schema_name=schema_name) + 1
 
         return cls(
             **{

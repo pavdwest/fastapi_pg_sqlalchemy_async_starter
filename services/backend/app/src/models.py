@@ -65,6 +65,7 @@ class IdMixin:
     ) -> Union[None, Self]:
         async with DatabaseService.async_session(schema_name) as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
+            print(q.__str__())
             res = await session.execute(q)
             return res.scalars().first()
 
@@ -205,9 +206,13 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
         #     pass
 
     @classmethod
-    async def get_mock_instance(cls, idx: int = None) -> Self:
+    async def get_mock_instance(
+        cls,
+        schema_name: str = SHARED_SCHEMA_NAME,
+        idx: int = None,
+    ) -> Self:
         if idx is None:
-            idx = await cls.get_max_id() + 1
+            idx = await cls.get_max_id(schema_name=schema_name) + 1
 
         payload = {}
         settable_field_types = cls.get_field_types(fields=tuple(cls.get_settable_fieldnames()))
@@ -223,20 +228,36 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
         return await cls.get_model_class()(**payload)
 
     @classmethod
-    async def get_mock_instances(cls, count: int = 100) -> List[Self]:
-        idx = await cls.get_max_id() + 1
-        tasks = [cls.get_mock_instance(idx=idx+i) for i in range(count)]
+    async def get_mock_instances(
+        cls,
+        count: int = 100,
+        schema_name = SHARED_SCHEMA_NAME,
+    ) -> List[Self]:
+        idx = await cls.get_max_id(schema_name=schema_name) + 1
+        tasks = [
+            cls.get_mock_instance(
+                schema_name=schema_name,
+                idx=idx+i
+            ) for i in range(count)
+        ]
         return await asyncio.gather(*tasks)
 
     @classmethod
-    async def seed_multiple(cls, count: int = 100) -> List[Self]:
-        items = await cls.get_mock_instances(count=count)
-        return await cls.create_many(items=items)
+    async def seed_multiple(
+        cls,
+        count: int = 100,
+        schema_name = SHARED_SCHEMA_NAME,
+    ) -> List[Self]:
+        items = await cls.get_mock_instances(count=count, schema_name=schema_name)
+        return await cls.create_many(items, schema_name)
 
     @classmethod
-    async def seed_one(cls) -> Self:
+    async def seed_one(
+        cls,
+        schema_name = SHARED_SCHEMA_NAME,
+    ) -> Self:
         idx = await cls.get_max_id() + 1
-        return await cls.get_mock_instance(idx=idx).save()
+        return await cls.get_mock_instance(idx=idx).save(schema_name=schema_name)
 
     @classmethod
     async def get_max_id(
@@ -356,7 +377,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
                 ]
             )
             await session.commit()
-            return await cls.read_by_id(id=id)
+            return await cls.read_by_id(id=id, schema_name=schema_name)
 
     # TODO: Find best way to do List[Self]
     @classmethod
@@ -421,7 +442,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             q = q.returning(cls.get_model_class().id)
             res = await session.execute(q, item.to_dict())
             await session.commit()
-            return await cls.read_by_id(id=res.scalar())
+            return await cls.read_by_id(id=res.scalar(), schema_name=schema_name)
 
     @classmethod
     async def upsert_many(
