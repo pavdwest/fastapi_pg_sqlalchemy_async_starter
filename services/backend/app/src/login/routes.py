@@ -139,7 +139,7 @@ from fastapi import (
 from fastapi.security import OAuth2PasswordRequestForm
 
 from src.versions import ApiVersion
-from src.auth import verify_password, create_access_token, TokenGet
+from src.auth import get_hashed_password, verify_password, create_access_token, TokenGet
 from src.login.models import Login, get_unverified_login, get_current_login
 from src.login.validators import (
     LoginCreate,
@@ -179,6 +179,22 @@ wtf_router = APIRouter(
 #     return {
 #         'message': f"Hi {login.identifier}, you have accessed the super secret route available only to logged-in users."
 #     }
+
+@wtf_router.post(
+    '/signup',
+    summary='Sign up.',
+    response_model=LoginGet,
+    status_code=status.HTTP_200_OK,
+    description='Sign up for this service'
+)
+async def signup(
+    item: LoginCreate
+) -> LoginGet:
+    hashed_password = get_hashed_password(item.password)
+    del item.password
+    item_db = await Login(**item.to_dict(), hashed_password=hashed_password).save()
+    return LoginGet.model_construct(**item_db.to_dict())
+
 
 @wtf_router.post(
     '/verify_login',
