@@ -85,8 +85,8 @@ class LoginCreate(CreateValidator, LoginBase):
         from_attributes=True,
         json_schema_extra={
             'example': {
-                'identifier': 'joe.doe@incrediblecorruption.com',
-                'password': '5up3rS3<uR3',
+                'identifier': 'admin@pureformance.net',
+                'password': 'admin',
             }
         }
     )

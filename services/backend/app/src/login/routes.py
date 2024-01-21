@@ -138,6 +138,7 @@ from fastapi import (
 )
 from fastapi.security import OAuth2PasswordRequestForm
 
+from src.logging.service import logger
 from src.versions import ApiVersion
 from src.auth import get_hashed_password, verify_password, create_access_token, TokenGet
 from src.login.models import Login, get_unverified_login, get_current_login
@@ -193,6 +194,8 @@ async def signup(
     hashed_password = get_hashed_password(item.password)
     del item.password
     item_db = await Login(**item.to_dict(), hashed_password=hashed_password).save()
+    # TODO: Send email with auth code
+    logger.warning(f"New User Verification Token: {item_db.verification_token}")
     return LoginGet.model_construct(**item_db.to_dict())
 
 
@@ -211,11 +214,11 @@ async def verify_login(
         login.verified = True
         await login.save()
         return {
-            'message': 'Login details have been verified.'
+            'message': 'Login details successfully verified.'
         }
     else:
         return {
-            'message': 'Incorrect verification token.'
+            'message': 'Could not validate login. Please contact support.'
         }
 
 
