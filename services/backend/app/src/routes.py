@@ -71,7 +71,6 @@ def generate_route_class(
     # Endpoints
     @router.post(
         '',
-        response_model=ReadValidatorClass,
         status_code=status.HTTP_200_OK,
         summary=f"Create one {ModelClass.__name__} in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
@@ -92,7 +91,6 @@ def generate_route_class(
 
     @router.patch(
         '/{id}',
-        response_model=ReadValidatorClass,
         status_code=status.HTTP_200_OK,
         summary=f"Update a specific {ModelClass.__name__} stored in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
@@ -112,7 +110,6 @@ def generate_route_class(
 
     @router.patch(
         '',
-        response_model=ReadValidatorClass,
         status_code=status.HTTP_200_OK,
         summary=f"Update a specific {ModelClass.__name__} stored in the database (`id` included in the payload).",
         description='Endpoint description. Will use the docstring if not provided.',
@@ -132,7 +129,6 @@ def generate_route_class(
 
     @router.put(
         '',
-        response_model=ReadValidatorClass,
         status_code=status.HTTP_200_OK,
         summary=f"Create or update one {ModelClass.__name__} in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
@@ -147,7 +143,6 @@ def generate_route_class(
 
     @router.delete(
         '/{id}',
-        response_model=Bulk,
         status_code=status.HTTP_200_OK,
         summary=f"Delete a specific {ModelClass.__name__} stored in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
@@ -171,7 +166,6 @@ def generate_route_class(
 
     @router.get(
         '/{id}',
-        response_model=ReadValidatorClass,
         status_code=status.HTTP_200_OK,
         summary=f"Get a {ModelClass.__name__} stored in the database by its ID.",
         description='Endpoint description. Will use the docstring if not provided.',
@@ -190,7 +184,6 @@ def generate_route_class(
 
     @router.delete(
         '',
-        response_model=Bulk,
         status_code=status.HTTP_200_OK,
         summary=f"Delete all {pluralize(ModelClass.__name__)} stored in the database.",
         description='Endpoint description. Will use the docstring if not provided.',
@@ -206,7 +199,6 @@ def generate_route_class(
 
     @router.get(
         '',
-        response_model=List[ReadValidatorClass],
         status_code=status.HTTP_200_OK,
         summary=f"Get all {pluralize(ModelClass.__name__)} stored in the database.",
         description='Endpoint description. Will use the docstring if not provided.',

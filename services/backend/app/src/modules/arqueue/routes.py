@@ -15,7 +15,6 @@ router = APIRouter(
 
 @router.get(
     '/arqueue/sandbox',
-    response_model=Dict,
     status_code=status.HTTP_200_OK,
     summary='Sandbox for testing Arqueue',
     description='Endpoint description. Will use the docstring if not provided.',
@@ -51,7 +50,6 @@ async def sandbox(response: Response) -> Dict:
 
 @router.get(
     '/arqueue/no_op_task',
-    response_model=Dict,
     status_code=status.HTTP_200_OK,
     summary='Throughput testing Arqueue',
     description='Endpoint description. Will use the docstring if not provided.',
@@ -80,7 +78,6 @@ async def no_op_task(n: int = 2500) -> Dict:
 
 @router.get(
     '/arqueue/db_task',
-    response_model=Dict,
     status_code=status.HTTP_200_OK,
     summary='Db task testing Arqueue',
     description='Endpoint description. Will use the docstring if not provided.',

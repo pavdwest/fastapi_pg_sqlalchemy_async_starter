@@ -25,6 +25,7 @@ def upgrade() -> None:
     sa.Column('verification_token', sa.UUID(), nullable=False),
     sa.Column('verified', sa.Boolean(), nullable=False),
     sa.Column('identifier', sa.String(), nullable=False),
+    sa.Column('tenant_schema_name', sa.String()),
     sa.Column('id', sa.BigInteger(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),

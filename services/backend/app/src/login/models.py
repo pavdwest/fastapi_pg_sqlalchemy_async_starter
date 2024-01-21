@@ -24,6 +24,7 @@ class Login(SharedModelMixin, IdentifierMixin, AppModel):
     hashed_password:    Mapped[str]         = mapped_column(nullable=False)
     verification_token: Mapped[uuid.uuid4]  = mapped_column(UUID(as_uuid=True), default=uuid.uuid4, unique=True, nullable=False)
     verified:           Mapped[bool]        = mapped_column(nullable=False, default=False)
+    tenant_schema_name: Mapped[str]         = mapped_column(nullable=True)
 
     # Override this to handle the password => hashed_password conversion
     @classmethod
