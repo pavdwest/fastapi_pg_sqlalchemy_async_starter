@@ -2,8 +2,9 @@
 ### THIS MUST BE AT THE TOP! ###
 ################################
 import os
+TEST_DB_SUFFIX = '_test'
 DATABASE_NAME: str  = os.environ.get('DATABASE_NAME')
-os.environ['DATABASE_NAME'] = f"{DATABASE_NAME}_test"
+os.environ['DATABASE_NAME'] = f"{DATABASE_NAME}{TEST_DB_SUFFIX}"
 ################################
 
 import pytest
@@ -26,10 +27,11 @@ def anyio_backend():
 
 @pytest.fixture(scope='session')
 async def client():
-    assert os.environ.get('DATABASE_NAME') == 'project_database_test'
+    # Assert we've set the test environment variable
+    assert os.environ.get('DATABASE_NAME')[-len(TEST_DB_SUFFIX):] == TEST_DB_SUFFIX
 
     # Drop & recreate db
-    DatabaseService.drop_db()
+    assert DatabaseService.drop_db(db_name_check=TEST_DB_SUFFIX)
     DatabaseService.get()
 
     async with LifespanManager(app):

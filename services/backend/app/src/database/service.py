@@ -174,10 +174,18 @@ class DatabaseService:
         os.system('alembic upgrade head')
 
     @classmethod
-    def drop_db(cls):
+    def drop_db(cls, db_name_check: str = None) -> bool:
         if database_exists(url=DATABASE_URL_SYNC):
+            if db_name_check is not None:
+                got = DATABASE_URL_SYNC[-len(db_name_check):]
+                if got != db_name_check:
+                    logger.error(f"Failed name check! Looking for '{db_name_check}', got '{got}'. Aborting.")
+                    return False
             logger.warning(f"Dropping database: {DATABASE_NAME}...")
             drop_database(url=DATABASE_URL_SYNC)
+            return True
+
+        return True
 
     @classmethod
     async def shutdown(cls):
