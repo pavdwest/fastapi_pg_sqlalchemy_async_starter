@@ -174,17 +174,28 @@ class DatabaseService:
         os.system('alembic upgrade head')
 
     @classmethod
-    def drop_db(cls, db_name_check: str = None) -> bool:
-        if database_exists(url=DATABASE_URL_SYNC):
-            if db_name_check is not None:
-                got = DATABASE_URL_SYNC[-len(db_name_check):]
-                if got != db_name_check:
-                    logger.error(f"Failed name check! Looking for '{db_name_check}', got '{got}'. Aborting.")
-                    return False
-            logger.warning(f"Dropping database: {DATABASE_NAME}...")
-            drop_database(url=DATABASE_URL_SYNC)
-            return True
+    def drop_db(cls, db_name_suffix_check: str) -> bool:
+        """Drops the active database - CAUTION!
 
+        Args:
+            db_name_check (str):
+
+            Will only drop active db if suffix is this.
+            E.g. if active db name is 'my_db_test', will drop active db if db_name_check = 'test'.
+            Will not drop if db_name_check = 'db_tests'.
+
+        Returns:
+            bool: False if the name check fails and db was not dopped. True otherwise.
+        """
+        if database_exists(url=DATABASE_URL_SYNC):
+            got = DATABASE_URL_SYNC[-len(db_name_suffix_check):]
+            if got != db_name_suffix_check:
+                logger.error(f"Failed name check! Looking for '{db_name_suffix_check}', got '{got}'. Aborting.")
+                return False
+            else:
+                logger.warning(f"Dropping database: {DATABASE_NAME}...")
+                drop_database(url=DATABASE_URL_SYNC)
+                return True
         return True
 
     @classmethod

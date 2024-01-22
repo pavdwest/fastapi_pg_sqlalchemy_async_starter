@@ -30,9 +30,8 @@ async def client():
     # Assert we've set the test environment variable
     assert os.environ.get('DATABASE_NAME')[-len(TEST_DB_SUFFIX):] == TEST_DB_SUFFIX
 
-    # Drop & recreate db
-    assert DatabaseService.drop_db(db_name_check=TEST_DB_SUFFIX)
-    DatabaseService.get()
+    # Drop db
+    assert DatabaseService.drop_db(db_name_suffix_check=TEST_DB_SUFFIX)
 
     async with LifespanManager(app):
         async with AsyncClient(app=app, base_url='http://test') as c:
