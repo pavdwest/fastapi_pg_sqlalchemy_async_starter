@@ -195,7 +195,6 @@ async def signup(
     item_db = await Login(**item.to_dict(), hashed_password=hashed_password).save()
     # TODO: Send email with auth code
     logger.warning(f"New User Verification Token: {item_db.verification_token}")
-
     return LoginGet.model_construct(**item_db.to_dict())
 
 

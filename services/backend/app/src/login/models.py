@@ -30,15 +30,14 @@ class Login(SharedModelMixin, IdentifierMixin, AppModel):
     @classmethod
     async def create_one(
         cls,
-        item: CreateValidator | Self,
+        item: CreateValidator,
         schema_name = SHARED_SCHEMA_NAME,
-    ) -> List[int]:
+    ) -> Login:
         password = item.password
         del item.password
         item_dict = item.to_dict()
         item_dict['hashed_password'] = get_hashed_password(password)
-        item_db = await super().create_one(item_dict, schema_name)
-        return ReadValidator.model_construct(**item_db.to_dict())
+        return await super().create_one(item_dict, schema_name)
 
 
 async def get_unverified_login(token: Annotated[OAuth2PasswordBearer, Depends(reuseable_oauth)]) -> Login:
