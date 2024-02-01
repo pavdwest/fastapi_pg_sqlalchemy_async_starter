@@ -69,7 +69,7 @@ async def test_update_one_with_all_fields(client: AsyncClient):
             'bio': 'I like to read books and write reviews.',
             'name': 'Booker DeDimwitte',
         }
-    ).save()
+    ).save(schema_name=client.login.tenant_schema_name)
 
     response = await client.patch(
         f"{route_base}/{item.id}",
@@ -99,7 +99,7 @@ async def test_update_one_does_not_apply_none(client: AsyncClient):
             'bio': 'I like to read books and write reviews.',
             'name': 'Booker DeDimwitte',
         }
-    ).save()
+    ).save(schema_name=client.login.tenant_schema_name)
 
     response = await client.patch(
         f"{route_base}/{item.id}",
@@ -129,7 +129,7 @@ async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
             'bio': 'I like to read books and write reviews',
             'name': 'Booker DeDimwitte',
         }
-    ).save()
+    ).save(schema_name=client.login.tenant_schema_name)
     response = await client.patch(
         f"{route_base}/{item.id}",
         json={
@@ -156,7 +156,7 @@ async def test_update_one_with_only_optional_fields(client: AsyncClient):
             'bio': 'I like to read books and write reviews',
             'name': 'Booker DeDimwitte',
         }
-    ).save()
+    ).save(schema_name=client.login.tenant_schema_name)
     response = await client.patch(
         f"{route_base}/{item.id}",
         json={
@@ -184,7 +184,7 @@ async def test_update_one_with_no_fields(client: AsyncClient):
             'bio': 'I like to read books and write reviews6',
             'name': 'Booker DeDimwitte6',
         }
-    ).save()
+    ).save(schema_name=client.login.tenant_schema_name)
     response = await client.patch(
         f"{route_base}/{item.id}",
         json={}
@@ -209,7 +209,7 @@ async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
             'bio': 'I like to read books and write reviews',
             'name': 'Booker DeDimwitte',
         }
-    ).save()
+    ).save(schema_name=client.login.tenant_schema_name)
 
     response = await client.patch(
         f"{route_base}/{item.id}",
@@ -240,7 +240,7 @@ async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncCli
             'bio': 'I like to read books and write reviews',
             'name': 'Booker DeDimwitte',
         }
-    ).save()
+    ).save(schema_name=client.login.tenant_schema_name)
     response = await client.patch(
         f"{route_base}",
         json={
@@ -268,8 +268,8 @@ async def test_delete_one(client: AsyncClient):
             'bio': 'I like to read books and write reviews',
             'name': 'Booker DeDimwitte',
         }
-    ).save()
-    item_count = await Critic.get_count()
+    ).save(schema_name=client.login.tenant_schema_name)
+    item_count = await Critic.get_count(schema_name=client.login.tenant_schema_name)
     response = await client.delete(
         f"{route_base}/{item.id}"
     )
@@ -279,13 +279,13 @@ async def test_delete_one(client: AsyncClient):
     assert data['count'] == 1
     assert data['message'] == f'Deleted one Critic from the database.'
     assert data['ids'] == [item.id]
-    assert (await Critic.get_count()) == (item_count - 1)
+    assert (await Critic.get_count(schema_name=client.login.tenant_schema_name)) == (item_count - 1)
 
 
 @pytest.mark.anyio
 async def test_create_bulk(client: AsyncClient):
     # Get count before
-    item_count = await Critic.get_count()
+    item_count = await Critic.get_count(schema_name=client.login.tenant_schema_name)
 
     # Create items
     response = await client.post(
@@ -310,17 +310,17 @@ async def test_create_bulk(client: AsyncClient):
     assert len(data) == bulk_response_member_count
     assert data['count'] == 2
     assert data['message'] == f'Created multiple Critics in the database.'
-    assert (await Critic.get_count()) == (item_count + 2)
+    assert (await Critic.get_count(schema_name=client.login.tenant_schema_name)) == (item_count + 2)
 
     # Assert values
-    item1 = await Critic.read_by_id(id=data['ids'][0])
+    item1 = await Critic.read_by_id(id=data['ids'][0], schema_name=client.login.tenant_schema_name)
     assert item1.username == 'ultimate_worryer1994'
     assert item1.bio == 'I like to read books and write reviews'
     assert item1.name == 'Booker DeDimwitte'
     assert item1.created_at is not None
     assert item1.updated_at is not None
 
-    item2 = await Critic.read_by_id(id=data['ids'][1])
+    item2 = await Critic.read_by_id(id=data['ids'][1], schema_name=client.login.tenant_schema_name)
     assert item2.username == 'ultimate_worryer1995'
     assert item2.bio is None
     assert item2.name is None
@@ -331,7 +331,7 @@ async def test_create_bulk(client: AsyncClient):
 @pytest.mark.anyio
 async def test_create_if_not_exists(client: AsyncClient):
     username = 'ultimate_worryer1996'
-    db_item = await ModelClass.get_by_username(username)
+    db_item = await ModelClass.read_by_username(username, schema_name=client.login.tenant_schema_name)
     assert db_item is None
 
     # Create items
@@ -365,7 +365,7 @@ async def test_update_if_exists(client: AsyncClient):
             'bio': 'I like to read books and write reviews',
             'name': 'Booker DeDimwitte',
         }
-    ).save()
+    ).save(schema_name=client.login.tenant_schema_name)
 
     # Update item
     response = await client.put(
@@ -392,7 +392,7 @@ async def test_update_if_exists(client: AsyncClient):
 @pytest.mark.anyio
 async def test_upsert_bulk(client: AsyncClient):
     # Get count before
-    item_count = await ModelClass.get_count()
+    item_count = await ModelClass.get_count(schema_name=client.login.tenant_schema_name)
 
     # Create items
     response = await client.put(
@@ -418,24 +418,24 @@ async def test_upsert_bulk(client: AsyncClient):
     assert data['count'] == 2
     assert data['message'] == f'Created or updated multiple Critics in the database.'
     assert len(data['ids']) == 2
-    assert (await ModelClass.get_count()) == (item_count + 2)
+    assert (await ModelClass.get_count(schema_name=client.login.tenant_schema_name)) == (item_count + 2)
 
     # Assert values
-    item1 = await ModelClass.read_by_id(id=data['ids'][0])
+    item1 = await ModelClass.read_by_id(id=data['ids'][0], schema_name=client.login.tenant_schema_name)
     assert item1.username == 'ultimate_worryer1998'
     assert item1.bio == 'I like to read books and write reviews'
     assert item1.name == 'Booker DeDimwitte'
     assert item1.created_at is not None
     assert item1.updated_at is not None
 
-    item2 = await ModelClass.read_by_id(id=data['ids'][1])
+    item2 = await ModelClass.read_by_id(id=data['ids'][1], schema_name=client.login.tenant_schema_name)
     assert item2.username == 'ultimate_worryer1999'
     assert item2.bio is None
     assert item2.name is None
     assert item2.created_at is not None
     assert item2.updated_at is not None
 
-    item_count_pre_update = await ModelClass.get_count()
+    item_count_pre_update = await ModelClass.get_count(schema_name=client.login.tenant_schema_name)
 
     # Update items
     response = await client.put(
@@ -461,10 +461,10 @@ async def test_upsert_bulk(client: AsyncClient):
     assert data['count'] == 2
     assert data['message'] == f'Created or updated multiple Critics in the database.'
     assert len(data['ids']) == 2
-    assert (await ModelClass.get_count()) == item_count_pre_update
+    assert (await ModelClass.get_count(schema_name=client.login.tenant_schema_name)) == item_count_pre_update
 
     # Assert values
-    item3 = await ModelClass.read_by_id(id=data['ids'][0])
+    item3 = await ModelClass.read_by_id(id=data['ids'][0], schema_name=client.login.tenant_schema_name)
     assert item3.id == item1.id
     assert item3.username == 'ultimate_worryer1998'
     assert item3.bio == 'I like to read books and write reviews in sql'
@@ -472,7 +472,7 @@ async def test_upsert_bulk(client: AsyncClient):
     assert item3.created_at is not None
     assert item3.updated_at is not None
 
-    item4 = await ModelClass.read_by_id(id=data['ids'][1])
+    item4 = await ModelClass.read_by_id(id=data['ids'][1], schema_name=client.login.tenant_schema_name)
     assert item4.id == item2.id
     assert item4.username == 'ultimate_worryer1999'
     assert item4.bio is None
@@ -490,7 +490,7 @@ async def test_read_all_full(client: AsyncClient):
             'bio': 'I like to read books and write wrongs',
             'name': 'DeBooker DeDimwitte',
         }
-    ).save()
+    ).save(schema_name=client.login.tenant_schema_name)
 
     item_last = await Critic(
         **{
@@ -498,7 +498,7 @@ async def test_read_all_full(client: AsyncClient):
             'bio': 'I like to write books and read wrongs',
             'name': 'DeBooker DeDimwittelemetry',
         }
-    ).save()
+    ).save(schema_name=client.login.tenant_schema_name)
 
     # Get from route
     response = await client.get(
@@ -509,7 +509,7 @@ async def test_read_all_full(client: AsyncClient):
     all_items_route.sort(key=lambda x: x['id'])
 
     # Get directly from db
-    all_items_db = await Critic.read_all()
+    all_items_db = await Critic.read_all(schema_name=client.login.tenant_schema_name)
     all_items_db.sort(key=lambda x: x.id)
 
     # assert all_items_route == all_items_db

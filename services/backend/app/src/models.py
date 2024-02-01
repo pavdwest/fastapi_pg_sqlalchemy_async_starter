@@ -65,7 +65,6 @@ class IdMixin:
     ) -> Union[None, Self]:
         async with DatabaseService.async_session(schema_name) as session:
             q = select(cls.get_model_class()).where(cls.get_model_class().id == id)
-            print(q.__str__())
             res = await session.execute(q)
             return res.scalars().first()
 
@@ -309,6 +308,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
         limit: int = None,
     ) -> List[Self]:
         async with DatabaseService.async_session(schema_name) as session:
+            logger.error(f"Reading all {schema_name}...")
             q = select(cls.get_model_class())
 
             if offset is not None:
@@ -316,6 +316,7 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             if limit is not None:
                 q = q.limit(limit)
 
+            logger.error(text(str(q)))
             res = await session.execute(q)
             all = res.scalars().all()
             # meta = {

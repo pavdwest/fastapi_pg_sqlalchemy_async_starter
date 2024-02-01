@@ -4,6 +4,7 @@ from httpx import AsyncClient
 from datetime import datetime
 
 from src.versions import ApiVersion
+from src.login.models import Login
 from src.modules.book.models import Book
 from src.modules.critic.models import Critic
 from src.modules.review.models import Review
@@ -16,8 +17,8 @@ bulk_response_member_count = 3
 
 
 # @pytest.fixture()
-async def new_book() -> Book:
-    next_item_id = await Book.get_count() + 1
+async def new_book(login: Login) -> Book:
+    next_item_id = await Book.get_count(schema_name=login.tenant_schema_name) + 1
     return await Book(
         **{
             'identifier': f"book {next_item_id} identifier",
@@ -25,25 +26,25 @@ async def new_book() -> Book:
             'author': f"book {next_item_id} author",
             'release_year': 2040 + next_item_id,
         }
-    ).save()
+    ).save(schema_name=login.tenant_schema_name)
 
 
 # @pytest.fixture()
-async def new_critic() -> Critic:
-    next_item_id = await Critic.get_count() + 1
+async def new_critic(login: Login) -> Critic:
+    next_item_id = await Critic.get_count(schema_name=login.tenant_schema_name) + 1
     return await Critic(
         **{
             'username': f"critic {next_item_id} username",
             'bio': f"critic {next_item_id} bio",
             'name': f"critic {next_item_id} name",
         }
-    ).save()
+    ).save(schema_name=login.tenant_schema_name)
 
 
 # @pytest.fixture()
-async def new_item() -> Review:
-    book = await new_book()
-    critic = await new_critic()
+async def new_item(login: Login) -> Review:
+    book = await new_book(login)
+    critic = await new_critic(login)
 
     return await Review(
         **{
@@ -53,7 +54,7 @@ async def new_item() -> Review:
             'rating': 4,
             'body': f"Critic {critic.id}'s review of Book {book.id} body",
         }
-    ).save()
+    ).save(schema_name=login.tenant_schema_name)
 
 
 @pytest.mark.anyio
@@ -70,8 +71,8 @@ async def test_read_all_empty(client: AsyncClient):
 async def test_create_one_with_all_fields(
     client: AsyncClient,
 ):
-    book = await new_book()
-    critic = await new_critic()
+    book = await new_book(client.login)
+    critic = await new_critic(client.login)
 
     response = await client.post(
         route_base,
@@ -279,7 +280,7 @@ async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncCli
 @pytest.mark.anyio
 async def test_delete_one(client: AsyncClient):
     item = await new_item()
-    item_count = await Review.get_count()
+    item_count = await Review.get_count(schema_name=client.login.tenant_schema_name)
     response = await client.delete(
         f"{route_base}/{item.id}"
     )
@@ -289,7 +290,7 @@ async def test_delete_one(client: AsyncClient):
     assert data['count'] == 1
     assert data['message'] == f'Deleted one Review from the database.'
     assert data['ids'] == [item.id]
-    assert (await Review.get_count()) == (item_count - 1)
+    assert (await Review.get_count(schema_name=client.login.tenant_schema_name)) == (item_count - 1)
 
 
 @pytest.mark.anyio
@@ -300,7 +301,7 @@ async def test_create_bulk(client: AsyncClient):
     critic2 = await new_critic()
 
     # Get count before
-    item_count = await Review.get_count()
+    item_count = await Review.get_count(schema_name=client.login.tenant_schema_name)
 
     # Create items
     response = await client.post(
@@ -331,7 +332,7 @@ async def test_create_bulk(client: AsyncClient):
     assert len(data) == bulk_response_member_count
     assert data['count'] == 2
     assert data['message'] == f'Created multiple Reviews in the database.'
-    assert (await Review.get_count()) == (item_count + 2)
+    assert (await Review.get_count(schema_name=client.login.tenant_schema_name)) == (item_count + 2)
 
     # Assert values
     item1 = await Review.read_by_id(id=data['ids'][0])
@@ -422,7 +423,7 @@ async def test_upsert_bulk(client: AsyncClient):
     critic2 = await new_critic()
 
     # Get count before
-    item_count = await ModelClass.get_count()
+    item_count = await ModelClass.get_count(schema_name=client.login.tenant_schema_name)
 
     # Create items
     response = await client.put(
@@ -454,7 +455,7 @@ async def test_upsert_bulk(client: AsyncClient):
     assert data['count'] == 2
     assert data['message'] == f'Created or updated multiple Reviews in the database.'
     assert len(data['ids']) == 2
-    assert (await ModelClass.get_count()) == (item_count + 2)
+    assert (await ModelClass.get_count(schema_name=client.login.tenant_schema_name)) == (item_count + 2)
 
     # Assert values
     item1 = await ModelClass.read_by_id(id=data['ids'][0])
@@ -477,7 +478,7 @@ async def test_upsert_bulk(client: AsyncClient):
     assert item2.created_at is not None
     assert item2.updated_at is not None
 
-    item_count_pre_update = await ModelClass.get_count()
+    item_count_pre_update = await ModelClass.get_count(schema_name=client.login.tenant_schema_name)
 
     # Update items
     response = await client.put(
@@ -509,7 +510,7 @@ async def test_upsert_bulk(client: AsyncClient):
     assert data['count'] == 2
     assert data['message'] == f'Created or updated multiple Reviews in the database.'
     assert len(data['ids']) == 2
-    assert (await ModelClass.get_count()) == item_count_pre_update
+    assert (await ModelClass.get_count(schema_name=client.login.tenant_schema_name)) == item_count_pre_update
 
     # Assert values
     item1db = await ModelClass.read_by_id(id=data['ids'][0])
