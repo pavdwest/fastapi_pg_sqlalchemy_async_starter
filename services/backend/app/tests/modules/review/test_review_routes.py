@@ -549,7 +549,7 @@ async def test_read_all_full(client: AsyncClient):
     all_items_route.sort(key=lambda x: x['id'])
 
     # Get directly from db
-    all_items_db = await Review.read_all()
+    all_items_db = await Review.read_all(schema_name=client.login.tenant_schema_name)
     all_items_db.sort(key=lambda x: x.id)
 
     # assert all_items_route == all_items_db

@@ -22,14 +22,6 @@ class Review(TenantModelMixin, AppModel):
     rating:    Mapped[int]           = mapped_column()
     body:      Mapped[Optional[str]] = mapped_column()
 
-    __table_args__ = (
-        generate_unique_constraint(
-            'critic_id',
-            'book_id',
-            model_name='Review',
-        ),
-    )
-
     @classmethod
     async def seed_one(cls, schema_name: str) -> Self:
         idx = await cls.get_max_id() + 1
@@ -40,3 +32,12 @@ class Review(TenantModelMixin, AppModel):
             rating    = idx % 5 + 1,
             body      = f'Lorem ipsum dolor sit amet, consectetur adipiscing elit book book good. {idx}',
         )
+
+
+Review.__table__.append_constraint(
+    generate_unique_constraint(
+        'critic_id',
+        'book_id',
+        model_name='Review',
+    )
+)

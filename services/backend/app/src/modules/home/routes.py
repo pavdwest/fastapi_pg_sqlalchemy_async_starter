@@ -27,10 +27,6 @@ async def home(
             'message': 'Hello boils and ghouls'
         }
     """
-
-    from src.modules.review.models import Review
-    item = await Review.read_all(schema_name='tenant_82f02b5b_c3d3_48c9_a884_d26cfc5e423f')
-
     return {
         'message': 'Hello boils and ghouls'
     }

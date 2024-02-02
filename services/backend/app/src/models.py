@@ -109,11 +109,11 @@ class DescriptionMixin:
 
 
 class SharedModelMixin:
-    __table_args__ = { 'schema': SHARED_SCHEMA_NAME }
+    __table_args__ = ({ 'schema': SHARED_SCHEMA_NAME }, )
 
 
 class TenantModelMixin:
-    __table_args__ = { 'schema': TENANT_SCHEMA_NAME }
+    __table_args__ = ({ 'schema': TENANT_SCHEMA_NAME }, )
 
 
 class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
@@ -308,15 +308,12 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
         limit: int = None,
     ) -> List[Self]:
         async with DatabaseService.async_session(schema_name) as session:
-            logger.error(f"Reading all {schema_name}...")
             q = select(cls.get_model_class())
-
             if offset is not None:
                 q = q.offset(offset)
             if limit is not None:
                 q = q.limit(limit)
 
-            logger.error(text(str(q)))
             res = await session.execute(q)
             all = res.scalars().all()
             # meta = {
