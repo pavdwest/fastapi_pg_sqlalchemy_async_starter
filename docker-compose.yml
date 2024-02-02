@@ -10,7 +10,7 @@ services:
       - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
-      # App will create its own DB!
+      # App will create its own DBs!
       - POSTGRES_DB=postgres
       - POSTGRES_PORT=5432
     ports:
@@ -50,11 +50,11 @@ services:
       - PYTHONBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
       - PROJECT_NAME=Project
-      - DATABASE_HOST=db
-      - DATABASE_PORT=5432
-      - DATABASE_USERNAME=admin
-      - DATABASE_PASSWORD=admin
-      - DATABASE_NAME=project_database
+      - SHARED_DATABASE_HOST=db
+      - SHARED_DATABASE_PORT=5432
+      - SHARED_DATABASE_USERNAME=admin
+      - SHARED_DATABASE_PASSWORD=admin
+      - SHARED_DATABASE_NAME=project_database_shared
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     command: uvicorn src.main:app --host=0.0.0.0 --port=8000 --reload --log-level 'debug'
@@ -75,11 +75,11 @@ services:
       - PYTHONBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
       - PROJECT_NAME=Project
-      - DATABASE_HOST=db
-      - DATABASE_PORT=5432
-      - DATABASE_USERNAME=admin
-      - DATABASE_PASSWORD=admin
-      - DATABASE_NAME=project_database
+      - SHARED_DATABASE_HOST=db
+      - SHARED_DATABASE_PORT=5432
+      - SHARED_DATABASE_USERNAME=admin
+      - SHARED_DATABASE_PASSWORD=admin
+      - SHARED_DATABASE_NAME=project_database_shared
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     command: arq src.modules.arqueue.worker.ArqueueWorkerSettings

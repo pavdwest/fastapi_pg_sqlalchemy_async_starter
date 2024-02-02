@@ -10,9 +10,9 @@ from src.modules.arqueue.routes import router as arqueue_router
 def register_routes(app: FastAPI):
     # Naked routes
     app.include_router(home_router)
-    app.include_router(arqueue_router)
+    # app.include_router(arqueue_router)
 
-    # Controller routes
-    app.include_router(book_router.router)
-    app.include_router(critic_router.router)
-    app.include_router(review_router.router)
+    # # Controller routes
+    # app.include_router(book_router.router)
+    # app.include_router(critic_router.router)
+    # app.include_router(review_router.router)

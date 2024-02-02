@@ -1,68 +1,72 @@
 from __future__ import annotations
+from enum import Enum
 import os
 from contextlib import asynccontextmanager
 from functools import lru_cache
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy_utils import database_exists, create_database, drop_database
+from sqlalchemy.orm import sessionmaker, Session
+# from sqlalchemy_utils import database_exists, create_database, drop_database
+import sqlalchemy_utils
 
 from src.logging.service import logger
-from src.config import (
-    DATABASE_HOST,
-    DATABASE_NAME,
-    DATABASE_URL_SYNC,
-    DATABASE_URL_ASYNC,
-)
+from src import config
+
+
+class Adapters(str, Enum):
+    ASYNC = 'asyncpg'
+    SYNC = 'psycopg2'
 
 
 # TODO: Proper singleton
 class DatabaseService:
-    _instance = None
-
-    @classmethod
-    @lru_cache(maxsize=1)
-    def get(cls) -> DatabaseService:
-        if cls._instance is None:
-            cls._instance = DatabaseService()
-        return cls._instance
-
     def __init__(self) -> None:
-        __class__.create_db()
-        self._async_engine: AsyncEngine = create_async_engine(
-            DATABASE_URL_ASYNC,
-            future=True,
+        # Sync
+        self.SHARED_DATABASE_URL_SYNC = self.__class__.get_db_url(
+            database_host=config.SHARED_DATABASE_HOST,
+            database_port=config.SHARED_DATABASE_PORT,
+            database_username=config.SHARED_DATABASE_USERNAME,
+            database_password=config.SHARED_DATABASE_PASSWORD,
+            database_name=config.SHARED_DATABASE_NAME,
+            adapter=Adapters.SYNC,
+        )
+        # Shared DB
+        self.create_db(self.SHARED_DATABASE_URL_SYNC)
+
+        # Async
+        self.SHARED_DATABASE_URL_ASYNC = self.__class__.get_db_url(
+            database_host=config.SHARED_DATABASE_HOST,
+            database_port=config.SHARED_DATABASE_PORT,
+            database_username=config.SHARED_DATABASE_USERNAME,
+            database_password=config.SHARED_DATABASE_PASSWORD,
+            database_name=config.SHARED_DATABASE_NAME,
+            adapter=Adapters.ASYNC,
+        )
+        self.SHARED_ENGINE = create_async_engine(
+            url=self.SHARED_DATABASE_URL_ASYNC,
             echo=True,
-            # pool_size=50,
         )
 
-        self._async_session_maker: AsyncSession = sessionmaker(
-            self._async_engine,
-            expire_on_commit=False,
-            class_=AsyncSession,
-        )
+    # def get_tenant_engine(self, tenant_id: str) -> AsyncEngine:
+    #     return create_async_engine(
+    #         url=self.__class__.get_db_url(
+    #             database_host=TENANT_DATABASE_HOST,
+    #             database_port=TENANT_DATABASE_PORT,
+    #             database_username=TENANT_DATABASE_USERNAME,
+    #             database_password=TENANT_DATABASE_PASSWORD,
+    #             database_name=f"{SHARED_DATABASE_NAME}_{tenant_id}",
+    #         ),
+    #         echo=True,
+    #     )
 
-    @classmethod
+        # Create engines
     @asynccontextmanager
-    async def async_session(cls) -> AsyncSession:
-        """Async Context Manager to create a session with a specific schema context that auto commits.
-        Will lazy init db service if not already done.
-
-        Args:
-            schema_name (str): Database Schema Name for use with e.g. 'SELECT * FROM {schema_name}.some_table'
-
-        Returns:
-            AsyncSession: Async Session with the schema context set.
-
-        Yields:
-            Iterator[AsyncSession]: Async Session with the schema context set.
-        """
-        session = cls.get()._async_session_maker()
-        # session.expire_on_commit = False
-
+    async def get_session():
         try:
-            yield session
-            await session.commit()
+            async_session = async_session_generator()
+
+            async with async_session() as session:
+                yield session
         except:
             await session.rollback()
             raise
@@ -70,36 +74,29 @@ class DatabaseService:
             await session.close()
 
     @classmethod
-    def create_db(cls):
-        if not database_exists(url=DATABASE_URL_SYNC):
-            logger.warning(f"Creating database: {DATABASE_NAME}...")
-            create_database(url=DATABASE_URL_SYNC)
-            logger.warning('Running migrations as database was just created...')
-            cls.run_migrations()
+    def get_db_url(
+        cls,
+        database_host: str,
+        database_port: str,
+        database_username: str,
+        database_password: str,
+        database_name: str,
+        adapter: str = Adapters.ASYNC,
+    ) -> str:
+        return f"postgresql+{adapter}://{database_username}:{database_password}@{database_host}:{database_port}/{database_name}"
+
+    @classmethod
+    def create_db(cls, url: str) -> bool:
+        if not sqlalchemy_utils.database_exists(url):
+            logger.warning(f"Creating database: {url}...")
+            sqlalchemy_utils.create_database(url)
+            # logger.warning('Running migrations as database was just created...')
+            # cls.run_migrations()
 
             # TODO: Add some more detailed error handling if this borks
-            if not database_exists(url=DATABASE_URL_SYNC):
+            if not sqlalchemy_utils.database_exists(url):
                 raise Exception('COULD NOT CREATE DATABASE!')
             else:
                 logger.warning('Database created.')
         else:
-            logger.info(f"Database '{DATABASE_HOST}/{DATABASE_NAME}' already exists. Nothing to do.")
-
-    # TODO: Do properly online with alembic
-    @classmethod
-    def run_migrations(cls):
-        os.system('alembic upgrade head')
-
-    @classmethod
-    def drop_db(cls):
-        if database_exists(url=DATABASE_URL_SYNC):
-            logger.warning(f"Dropping database: {DATABASE_NAME}...")
-            drop_database(url=DATABASE_URL_SYNC)
-
-    @classmethod
-    async def shutdown(cls):
-        if cls._instance is not None:
-            if cls._instance._async_session_maker is not None:
-                await cls._instance._async_session_maker.close_all()
-            if cls._instance._async_engine is not None:
-                await cls._instance._async_engine.dispose()
+            logger.info(f"Database '{url}' already exists. Nothing to do.")
