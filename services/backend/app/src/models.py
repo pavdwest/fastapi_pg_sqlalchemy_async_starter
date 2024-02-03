@@ -425,6 +425,10 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             ucn = cls.get_unique_constraint_names()
             ucf = cls.get_unique_fieldnames()
 
+            logger.warning('HEEEEEEEEEEEEEREEEEEEEEEEE')
+            logger.warning(ucn)
+            logger.warning(ucf)
+
             # TODO: Ensure this is the desired behaviour
             if len(ucf) > 0:
                 q = q.on_conflict_do_update(

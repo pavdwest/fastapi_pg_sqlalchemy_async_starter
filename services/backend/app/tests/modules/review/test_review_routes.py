@@ -101,8 +101,8 @@ async def test_create_one_with_all_fields(
 async def test_create_one_with_only_mandatory_fields(
     client: AsyncClient,
 ):
-    book = await new_book()
-    critic = await new_critic()
+    book = await new_book(client.login)
+    critic = await new_critic(client.login)
 
     response = await client.post(
         route_base,
@@ -131,9 +131,9 @@ async def test_create_one_with_only_mandatory_fields(
 async def test_update_one_with_all_fields(
     client: AsyncClient,
 ):
-    book = await new_book()
-    critic = await new_critic()
-    item = await new_item()
+    book = await new_book(client.login)
+    critic = await new_critic(client.login)
+    item = await new_item(client.login)
 
     response = await client.patch(
         f"{route_base}/{item.id}",
@@ -161,9 +161,9 @@ async def test_update_one_with_all_fields(
 
 @pytest.mark.anyio
 async def test_update_one_does_not_apply_none(client: AsyncClient):
-    book = await new_book()
-    critic = await new_critic()
-    item = await new_item()
+    book = await new_book(client.login)
+    critic = await new_critic(client.login)
+    item = await new_item(client.login)
 
     response = await client.patch(
         f"{route_base}/{item.id}",
@@ -190,9 +190,9 @@ async def test_update_one_does_not_apply_none(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
-    book = await new_book()
-    critic = await new_critic()
-    item = await new_item()
+    book = await new_book(client.login)
+    critic = await new_critic(client.login)
+    item = await new_item(client.login)
 
     response = await client.patch(
         f"{route_base}/{item.id}",
@@ -220,9 +220,9 @@ async def test_update_one_with_only_mandatory_fields(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
-    book = await new_book()
-    critic = await new_critic()
-    item = await new_item()
+    book = await new_book(client.login)
+    critic = await new_critic(client.login)
+    item = await new_item(client.login)
 
     response = await client.patch(
         f"{route_base}/{item.id}",
@@ -249,9 +249,9 @@ async def test_update_one_with_payload_with_all_fields(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncClient):
-    book = await new_book()
-    critic = await new_critic()
-    item = await new_item()
+    book = await new_book(client.login)
+    critic = await new_critic(client.login)
+    item = await new_item(client.login)
 
     response = await client.patch(
         f"{route_base}",
@@ -279,7 +279,7 @@ async def test_update_one_by_payload_with_only_mandatory_fields(client: AsyncCli
 
 @pytest.mark.anyio
 async def test_delete_one(client: AsyncClient):
-    item = await new_item()
+    item = await new_item(client.login)
     item_count = await Review.get_count(schema_name=client.login.tenant_schema_name)
     response = await client.delete(
         f"{route_base}/{item.id}"
@@ -295,10 +295,10 @@ async def test_delete_one(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_create_bulk(client: AsyncClient):
-    book1 = await new_book()
-    critic1 = await new_critic()
-    book2 = await new_book()
-    critic2 = await new_critic()
+    book1 = await new_book(client.login)
+    critic1 = await new_critic(client.login)
+    book2 = await new_book(client.login)
+    critic2 = await new_critic(client.login)
 
     # Get count before
     item_count = await Review.get_count(schema_name=client.login.tenant_schema_name)
@@ -335,7 +335,7 @@ async def test_create_bulk(client: AsyncClient):
     assert (await Review.get_count(schema_name=client.login.tenant_schema_name)) == (item_count + 2)
 
     # Assert values
-    item1 = await Review.read_by_id(id=data['ids'][0])
+    item1 = await Review.read_by_id(id=data['ids'][0], schema_name=client.login.tenant_schema_name)
     assert item1.title == f"Critic {critic1.id}'s review of Book {book1.id} title"
     assert item1.critic_id == critic1.id
     assert item1.book_id == book1.id
@@ -344,7 +344,7 @@ async def test_create_bulk(client: AsyncClient):
     assert item1.created_at is not None
     assert item1.updated_at is not None
 
-    item2 = await Review.read_by_id(id=data['ids'][1])
+    item2 = await Review.read_by_id(id=data['ids'][1], schema_name=client.login.tenant_schema_name)
     assert item2.title == f"Critic {critic2.id}'s review of Book {book2.id} title"
     assert item2.critic_id == critic2.id
     assert item2.book_id == book2.id
@@ -356,8 +356,8 @@ async def test_create_bulk(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_create_if_not_exists(client: AsyncClient):
-    book = await new_book()
-    critic = await new_critic()
+    book = await new_book(client.login)
+    critic = await new_critic(client.login)
 
     # Create items
     response = await client.put(
@@ -387,7 +387,7 @@ async def test_create_if_not_exists(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_update_if_exists(client: AsyncClient):
-    item = await new_item()
+    item = await new_item(client.login)
 
     # Update item
     response = await client.put(
@@ -417,10 +417,10 @@ async def test_update_if_exists(client: AsyncClient):
 
 @pytest.mark.anyio
 async def test_upsert_bulk(client: AsyncClient):
-    book1 = await new_book()
-    critic1 = await new_critic()
-    book2 = await new_book()
-    critic2 = await new_critic()
+    book1 = await new_book(client.login)
+    critic1 = await new_critic(client.login)
+    book2 = await new_book(client.login)
+    critic2 = await new_critic(client.login)
 
     # Get count before
     item_count = await ModelClass.get_count(schema_name=client.login.tenant_schema_name)
@@ -537,8 +537,8 @@ async def test_upsert_bulk(client: AsyncClient):
 @pytest.mark.anyio
 async def test_read_all_full(client: AsyncClient):
     # Create two items
-    item_second_last = await new_item()
-    item_last = await new_item()
+    item_second_last = await new_item(client.login)
+    item_last = await new_item(client.login)
 
     # Get from route
     response = await client.get(
