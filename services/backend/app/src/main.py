@@ -7,6 +7,8 @@ from src.modules.arqueue.bus import Bus
 # Custom Startup & Shutdown Handlers
 async def startup():
     # await AppModel.init_orm()
+    from src.database.service import DatabaseService
+    db = DatabaseService.get()
 
     # Register routes with app
     register_routes(app=app)

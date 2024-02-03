@@ -24,6 +24,7 @@ from src.login.validators import LoginCreate
 assert os.environ.get('DATABASE_NAME')[-len(TEST_DB_SUFFIX):] == TEST_DB_SUFFIX
 # Drop db
 assert DatabaseService.drop_db(db_name_suffix_check=TEST_DB_SUFFIX)
+DatabaseService.create_db()
 
 
 @pytest.fixture(scope='session')

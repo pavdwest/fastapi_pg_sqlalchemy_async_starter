@@ -7,6 +7,7 @@ from datetime import datetime
 import uuid
 
 from sqlalchemy import BigInteger, Insert, text, UniqueConstraint
+from sqlalchemy import MetaData
 from sqlalchemy import select, delete, update, insert
 from sqlalchemy.dialects.postgresql import insert as upsert
 from sqlalchemy.dialects.postgresql import UUID
@@ -25,6 +26,16 @@ from src.config import SHARED_SCHEMA_NAME, TENANT_SCHEMA_NAME
 from src.utils import ToDictMixin
 from src.database.service import DatabaseService
 from src.validators import AppValidator
+
+
+# convention = {
+#   "ix": "ix_%(column_0_label)s",
+#   "uq": "uq_%(table_name)s_%(column_0_name)s",
+#   "ck": "ck_%(table_name)s_%(constraint_name)s",
+#   "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+#   "pk": "pk_%(table_name)s"
+# }
+# meta = MetaData(naming_convention=convention)
 
 
 @lru_cache()
@@ -128,6 +139,8 @@ class AppModel(DeclarativeBase, IdMixin, AuditTimestampsMixin, ToDictMixin):
             str: Name of the table this model is mapped to.
         """
         return underscore(cls.__name__)
+
+    # metadata = meta
 
     @classmethod
     @lru_cache(maxsize=1)

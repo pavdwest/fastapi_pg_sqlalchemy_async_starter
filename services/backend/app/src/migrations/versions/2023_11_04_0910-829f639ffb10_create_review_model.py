@@ -33,6 +33,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['critic_id'], ['tenant.critic.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('critic_id', 'book_id', name='uc_Review_CriticId_BookId'),
+    # sa.UniqueConstraint('book_id', 'critic_id', name=op.f('uq_review_book_id')),
     schema='tenant',
     )
     # ### end Alembic commands ###

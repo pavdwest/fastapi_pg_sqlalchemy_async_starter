@@ -115,6 +115,14 @@ class DatabaseService:
         else:
             logger.info(f"Database '{DATABASE_HOST}/{DATABASE_NAME}' already exists. Nothing to do.")
 
+    def migrate(self):
+        # Shared schema
+
+        # Tenant model schema
+
+        # Actual tenant schemas
+        pass
+
     @classmethod
     def create_schema(cls, schema_name: str) -> None:
         """
@@ -164,6 +172,10 @@ class DatabaseService:
                 logger.warning(f"Cloning {source_schema_name}.{table_name} to {target_schema_name}.{table_name}...")
                 sql_clone = f"create table if not exists {target_schema_name}.{table_name} (like {source_schema_name}.{table_name} including all)"
                 clone_res = conn.execute(text(sql_clone))
+
+                # Fix constraint names
+                # sql_fix_constraints = f"alter table {target_schema_name}.{table_name} rename constraint {source_schema_name}.{table_name}_pkey to {target_schema_name}.{table_name}_pkey"
+                # conn.execute(text(sql_fix_constraints))
 
         logger.warning("Schema cloned.")
         sync_engine.dispose()

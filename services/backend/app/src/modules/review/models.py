@@ -1,7 +1,7 @@
 from typing import Optional
 from typing_extensions import Self
 
-from sqlalchemy import ForeignKey, BigInteger
+from sqlalchemy import ForeignKey, BigInteger, UniqueConstraint
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -40,4 +40,9 @@ Review.__table__.append_constraint(
         'book_id',
         model_name='Review',
     )
+
+    # UniqueConstraint(
+    #     'book_id',
+    #     'critic_id',
+    # )
 )
