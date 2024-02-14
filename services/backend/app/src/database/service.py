@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 from functools import lru_cache
+from pathlib import Path
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
@@ -15,6 +16,7 @@ from sqlalchemy.schema import CreateSchema
 
 from src.logging.service import logger
 from src.config import (
+    APP_SRC_FOLDER_ABS,
     IN_MAINTENANCE,
     DATABASE_HOST,
     DATABASE_NAME,
@@ -104,6 +106,9 @@ class DatabaseService:
             cls.create_schema(SHARED_SCHEMA_NAME)
             cls.create_schema(TENANT_SCHEMA_NAME)
             logger.warning('Default schemas created.')
+            logger.warning('Creating functions...')
+            cls.run_script_file(f"{APP_SRC_FOLDER_ABS}/database/scripts/create_function_clone_schema.sql")
+            logger.warning('Functions created.')
             logger.warning('Running migrations as database was just created...')
             cls.run_migrations()
 
@@ -137,7 +142,20 @@ class DatabaseService:
                     logger.error(f"Could not create schema: '{schema_name}'.")
             else:
                 logger.info(f"Schema '{schema_name}' already exists.")
+        sync_engine.dispose()
+        
+    @classmethod
+    def run_script_file(cls, path: str) -> None:
+        """
+        Runs a SQL script file against the database.
 
+        Args:
+            path (str): Path to the SQL script file.
+        """
+        sync_engine = create_engine(DATABASE_URL_SYNC)
+        with sync_engine.begin() as conn:
+            sql = open(path, 'r').read()
+            conn.execute(text(sql))
         sync_engine.dispose()
 
     @classmethod
@@ -154,17 +172,8 @@ class DatabaseService:
         sync_engine = create_engine(DATABASE_URL_SYNC)
         with sync_engine.begin() as conn:
             logger.warning(f"Cloning schema '{source_schema_name}' to '{target_schema_name}...")
-
-            # Get all tables in schema
-            sql_schema_tables = "select * from information_schema.tables where table_schema = 'tenant'"
-            schema_tables = [r['table_name'] for r in conn.execute(text(sql_schema_tables)).mappings().all()]
-
-            # Clone tables one for one
-            for table_name in schema_tables:
-                logger.warning(f"Cloning {source_schema_name}.{table_name} to {target_schema_name}.{table_name}...")
-                sql_clone = f"create table if not exists {target_schema_name}.{table_name} (like {source_schema_name}.{table_name} including all)"
-                clone_res = conn.execute(text(sql_clone))
-
+            sql = f"select public.clone_schema('{source_schema_name}', '{target_schema_name}');"
+            clone_res = conn.execute(text(sql))
         logger.warning("Schema cloned.")
         sync_engine.dispose()
 

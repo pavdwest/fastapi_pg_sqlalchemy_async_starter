@@ -458,7 +458,7 @@ async def test_upsert_bulk(client: AsyncClient):
     assert (await ModelClass.get_count(schema_name=client.login.tenant_schema_name)) == (item_count + 2)
 
     # Assert values
-    item1 = await ModelClass.read_by_id(id=data['ids'][0])
+    item1 = await ModelClass.read_by_id(id=data['ids'][0], schema_name=client.login.tenant_schema_name)
     assert item1.id == item1.id
     assert item1.title == f"Critic {item1.critic_id}'s review of Book {item1.book_id} title"
     assert item1.critic_id == item1.critic_id
@@ -468,7 +468,7 @@ async def test_upsert_bulk(client: AsyncClient):
     assert item1.created_at is not None
     assert item1.updated_at is not None
 
-    item2 = await ModelClass.read_by_id(id=data['ids'][1])
+    item2 = await ModelClass.read_by_id(id=data['ids'][1], schema_name=client.login.tenant_schema_name)
     assert item2.id == item2.id
     assert item2.title == f"Critic {item2.critic_id}'s review of Book {item2.book_id} title"
     assert item2.critic_id == item2.critic_id
@@ -513,7 +513,7 @@ async def test_upsert_bulk(client: AsyncClient):
     assert (await ModelClass.get_count(schema_name=client.login.tenant_schema_name)) == item_count_pre_update
 
     # Assert values
-    item1db = await ModelClass.read_by_id(id=data['ids'][0])
+    item1db = await ModelClass.read_by_id(id=data['ids'][0], schema_name=client.login.tenant_schema_name)
     assert item1db.id == item1.id
     assert item1db.title == f"Critic {item1.critic_id}'s review of Book {item1.book_id} title UPDATE"
     assert item1db.critic_id == item1.critic_id
@@ -523,7 +523,7 @@ async def test_upsert_bulk(client: AsyncClient):
     assert item1db.created_at is not None
     assert item1db.updated_at is not None
 
-    item2db = await ModelClass.read_by_id(id=data['ids'][1])
+    item2db = await ModelClass.read_by_id(id=data['ids'][1], schema_name=client.login.tenant_schema_name)
     assert item2db.id == item2.id
     assert item2db.title == f"Critic {item2.critic_id}'s review of Book {item2.book_id} title UPDATE"
     assert item2db.critic_id == item2.critic_id

@@ -45,7 +45,7 @@ class Tenant(AppModel, IdentifierMixin, SharedModelMixin):
             logger.error(f"Tenant {self.identifier} cannot be provisioned: No schema name specified!")
         else:
             # Create a new schema for the tenant
-            DatabaseService.get().create_schema(schema_name=self.schema_name)
+            # DatabaseService.get().create_schema(schema_name=self.schema_name)
 
             # Create schema tables
             DatabaseService.get().clone_db_schema(source_schema_name=TENANT_SCHEMA_NAME, target_schema_name=self.schema_name)
