@@ -10,6 +10,7 @@ pytest
 httpx
 asgi-lifespan
 arq
-passlib[bcrypt]
+passlib
+bcrypt
 python-jose[cryptography]
 python-multipart
