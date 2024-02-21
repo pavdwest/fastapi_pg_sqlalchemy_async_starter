@@ -1,4 +1,4 @@
-fastapi
+fastapi[all]
 uvicorn[standard]
 asyncpg
 psycopg2-binary
@@ -6,7 +6,6 @@ sqlalchemy[asyncio]
 sqlalchemy_utils
 alembic
 inflection
-pydantic
 pytest
 httpx
 asgi-lifespan
