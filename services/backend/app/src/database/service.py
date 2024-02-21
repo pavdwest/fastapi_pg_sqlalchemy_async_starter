@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 from functools import lru_cache
-from pathlib import Path
+from typing import AsyncIterator
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
@@ -64,7 +64,7 @@ class DatabaseService:
 
     @classmethod
     @asynccontextmanager
-    async def async_session(cls, schema_name: str = SHARED_SCHEMA_NAME) -> AsyncSession:
+    async def async_session(cls, schema_name: str = SHARED_SCHEMA_NAME) -> AsyncIterator[AsyncSession]:
         """Async Context Manager to create a session with a specific schema context that auto commits.
         Will lazy init db service if not already done.
 
@@ -143,7 +143,7 @@ class DatabaseService:
             else:
                 logger.info(f"Schema '{schema_name}' already exists.")
         sync_engine.dispose()
-        
+
     @classmethod
     def run_script_file(cls, path: str) -> None:
         """

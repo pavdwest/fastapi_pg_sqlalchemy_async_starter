@@ -84,6 +84,8 @@ services:
       - DATABASE_NAME=project_database
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - JWT_SECRET_KEY=super_secret_key
+      - JWT_REFRESH_SECRET_KEY=super_secret_refresh_key
     command: arq src.modules.arqueue.worker.ArqueueWorkerSettings
     deploy:
       replicas: 1
